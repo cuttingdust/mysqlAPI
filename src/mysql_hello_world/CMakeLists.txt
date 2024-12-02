@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.20)
 project(mysql_hello_world)
 
-set( DPS_LIBRARYS
-	libmysql.lib
-)
-
+if(MSVC)
+  set( DPS_LIBRARYS 
+    libmysql.lib
+  )
+else()
+  set( DPS_LIBRARYS
+    libmysqlclient.a
+	  libmysqlservices.a
+    libssl.3.dylib
+    libcrypto.3.dylib
+  )
+endif()
 
 cpp_execute(${PROJECT_NAME})
 
