@@ -5,7 +5,7 @@ if(MSVC)
   set( DPS_LIBRARYS 
     libmysql.lib
   )
-else()
+elseif(APPLE)
   set( DPS_LIBRARYS
     libmysqlclient.a
 	  libmysqlservices.a
