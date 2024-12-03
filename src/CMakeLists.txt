@@ -62,3 +62,4 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CommonTools)
 
 add_subdirectory(mysql_hello_world)
+add_subdirectory(mysql_memory_test)
