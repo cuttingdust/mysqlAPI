@@ -20,7 +20,12 @@ int main(int argc, char *argv[])
     {
         std::cout << "mysql_options failed!" << mysql_error(&mysql) << std::endl;
     }
-    // mysql_options(&mysql, MYSQL_OPT_RECONNECT, "true");    /// 设置自动重连
+    int recon = 1;
+    re        = mysql_options(&mysql, MYSQL_OPT_RECONNECT, &recon); /// 设置自动重连
+    if (re != 0)
+    {
+        std::cout << "mysql_options failed!" << mysql_error(&mysql) << std::endl;
+    }
 
 
     std::cout << "mysql connect..." << std::endl;
