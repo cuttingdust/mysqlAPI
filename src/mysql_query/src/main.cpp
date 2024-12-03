@@ -70,14 +70,39 @@ int main(int argc, char *argv[])
     {
         std::cout << "mysql_store_result success!" << std::endl;
     }
+
+    /// 获取表字段
+    MYSQL_FIELD *field = nullptr;
+    while (field = mysql_fetch_field(result))
+    {
+        std::cout << "key:" << field->name << std::endl;
+    }
+
+    /// 获取表字段数量
+    int fnum = mysql_num_fields(result);
+
     /// 3 遍历结果集
     MYSQL_ROW row;
     while ((row = mysql_fetch_row(result)))
     {
         unsigned long *lens = mysql_fetch_lengths(result);
 
-        std::cout << lens[0] << "[" << row[0] << "," << row[1] << "]" << std::endl;
+        // std::cout << lens[0] << "[" << row[0] << "," << row[1] << "]" << std::endl;
+        for (int i = 0; i < fnum; i++)
+        {
+            std::cout << mysql_fetch_field_direct(result, i)->name << ":";
+            if (row[i])
+                std::cout << row[i];
+            else
+                std::cout << "NULL";
+            std::cout << ",";
+        }
+        std::cout << "\n==========================================" << std::endl;
+
     }
+    /// 清理结果集
+    mysql_free_result(result);
+
 
     mysql_close(&mysql);
 
