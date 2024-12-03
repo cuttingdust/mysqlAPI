@@ -417,4 +417,5 @@ function(replace_class_names header_file class_names macro_name)
         replace_class_name_in_header(${header_file} ${class_name} ${macro_name})
     endforeach()
 endfunction()
+
 ########################################################################################

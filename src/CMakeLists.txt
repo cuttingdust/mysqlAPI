@@ -8,7 +8,7 @@ project(mysql_api)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if(MSVC)
-set(CMAKE_GENERATOR_PLATFORM x64)
+	set(CMAKE_GENERATOR_PLATFORM x64)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -55,7 +55,7 @@ set(QRC_SOURCE_FILES)
 
 # 忽略特定库
 if(MSVC)
-SET(CMAKE_EXE_LINKER_FLAGS /NODEFAULTLIB:"libcmt.lib;libc.lib")
+	SET(CMAKE_EXE_LINKER_FLAGS /NODEFAULTLIB:"libcmt.lib;libc.lib")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -63,3 +63,4 @@ include(CommonTools)
 
 add_subdirectory(mysql_hello_world)
 add_subdirectory(mysql_memory_test)
+add_subdirectory(mysql_connect)
