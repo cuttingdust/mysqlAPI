@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     }
 
     /// 获取表字段数量
-    int fnum = mysql_num_fields(result);
+    const int f_num = mysql_num_fields(result);
 
     /// 3 遍历结果集
     MYSQL_ROW row;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         unsigned long *lens = mysql_fetch_lengths(result);
 
         // std::cout << lens[0] << "[" << row[0] << "," << row[1] << "]" << std::endl;
-        for (int i = 0; i < fnum; i++)
+        for (int i = 0; i < f_num; i++)
         {
             std::cout << mysql_fetch_field_direct(result, i)->name << ":";
             if (row[i])
@@ -98,7 +98,6 @@ int main(int argc, char *argv[])
             std::cout << ",";
         }
         std::cout << "\n==========================================" << std::endl;
-
     }
     /// 清理结果集
     mysql_free_result(result);
