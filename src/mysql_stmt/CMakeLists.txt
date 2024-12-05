@@ -11,7 +11,7 @@ if(MSVC)
 elseif(APPLE)
   set( DPS_LIBRARYS
     libmysqlclient.a
-	 libmysqlservices.a
+	  libmysqlservices.a
     libssl.3.dylib
     libcrypto.3.dylib
   )
