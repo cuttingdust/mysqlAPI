@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
 
     //// ==========================================2 插入数据 CLIENT_MULTI_STATEMENTS ================================
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 10; i++)
     {
         sql = std::format("INSERT INTO {} (`{}`, `{}`, `{}`) VALUES ('{}', '{}', '{}');", tableName, colName, colPath,
                           colSize, std::format("image_{}.jpg", i), R"(D:\images)", 10240);
@@ -124,18 +124,29 @@ int main(int argc, char *argv[])
     }
 
     /// delete 不会实际删除空间，只做了标识
-    // sql = std::format("DELETE FROM {}; ", tableName);
-    // re  = mysql_query(&mysql, sql.c_str());
-    // if (re == 0)
-    // {
-    //     int count = mysql_affected_rows(&mysql);
-    //     std::cout << "delete mysql_affected_rows " << count << std::endl;
-    // }
-    // else
-    // {
-    //     std::cout << "delete failed!" << mysql_error(&mysql) << std::endl;
-    // }
+    sql = std::format("DELETE FROM {}; ", tableName);
+    re  = mysql_query(&mysql, sql.c_str());
+    if (re == 0)
+    {
+        int count = mysql_affected_rows(&mysql);
+        std::cout << "delete mysql_affected_rows " << count << std::endl;
+    }
+    else
+    {
+        std::cout << "delete failed!" << mysql_error(&mysql) << std::endl;
+    }
 
+    /// 实际清理了空间
+    sql = std::format("OPTIMIZE TABLE {}", tableName);
+    re  = mysql_query(&mysql, sql.c_str());
+    if (re == 0)
+    {
+        std::cout << "OPTIMIZE success!" << std::endl;
+    }
+    else
+    {
+        std::cout << "OPTIMIZE failed!!!:" << mysql_error(&mysql) << std::endl;
+    }
     /// delete 后会直接删除空间
     mysql_close(&mysql);
 
