@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
     const char *passwd = "Handabao123@";
     const char *db     = "laoxiaketang";
 
+    /// CLIENT_MULTI_STATEMENTS 支持多条sql语句
     std::cout << "mysql connect..." << std::endl;
     // if (!mysql_real_connect(&mysql, host, user, passwd, db, 3306, nullptr, 0))
     if (!mysql_real_connect(&mysql, host, user, passwd, db, 3306, nullptr,
@@ -195,6 +196,111 @@ int main(int argc, char *argv[])
             std::cout << "t_video count(*) = " << row[0] << std::endl;
         }
     }
+
+    //// ==========================================3 测试3种插入数据的方式的耗时 ================================
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 1000; i++)
+    {
+        sql = std::format(
+                "INSERT INTO `{}` (`{}`,`{}`) VALUES ('{}','{}');", table_name, col_name, col_path, "single",
+                "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789");
+        re = mysql_query(&mysql, sql.c_str());
+        if (re != 0)
+        {
+            std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+        }
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "1 单条语句插入1千条数据" << dur / 1000. << "秒" << std::endl;
+
+    /// 多条语句插入1千条数据
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        sql        = "";
+        for (int i = 0; i < 1000; i++)
+        {
+            sql += std::format(
+                    "INSERT INTO `{}` (`{}`,`{}`) VALUES ('{}','{}');", table_name, col_name, col_path, "single",
+                    "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567"
+                    "890123456789");
+        }
+
+        re = mysql_query(&mysql, sql.c_str());
+        if (re != 0)
+        {
+            std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+        }
+        do
+        {
+            std::cout << mysql_affected_rows(&mysql) << std::flush;
+        }
+        while (mysql_next_result(&mysql) == 0);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        /// 转换为毫秒 1000
+        auto dur = duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "2 多条语句插入1千条数据" << dur.count() / 1000. << "秒" << std::endl;
+    }
+
+    /// 事务插入1千条数据
+    {
+        /// 1 开始事务
+        /// START TRANSACTION;
+        sql = "START TRANSACTION";
+        re  = mysql_query(&mysql, sql.c_str());
+        if (re != 0)
+        {
+            std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+        }
+
+        /// 2 设置为手动提交事务
+        /// set autocommit = 0
+        sql = "SET AUTOCOMMIT = 0";
+        re  = mysql_query(&mysql, sql.c_str());
+        if (re != 0)
+        {
+            std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < 1000; i++)
+        {
+            sql = std::format("INSERT INTO `{}` (`{}`,`{}`) VALUES ('{}','{}');", table_name, col_name, col_path,
+                              "single",
+                              "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567"
+                              "890123456789");
+            re  = mysql_query(&mysql, sql.c_str());
+            if (re != 0)
+            {
+                std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+            }
+            else
+                std::cout << mysql_affected_rows(&mysql) << std::flush;
+        }
+
+
+        sql = "COMMIT";
+        re  = mysql_query(&mysql, sql.c_str());
+        if (re != 0)
+        {
+            std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+        }
+
+        sql = "SET AUTOCOMMIT = 1";
+        re  = mysql_query(&mysql, sql.c_str());
+        if (re != 0)
+        {
+            std::cout << "mysql_query failed! " << mysql_error(&mysql) << std::endl;
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        /// 转换为毫秒 1000
+        auto dur = duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "3 事务插入1千条数据" << dur.count() / 1000. << "秒" << std::endl;
+    }
+
 
     /// delete 后会直接删除空间
     mysql_close(&mysql);
