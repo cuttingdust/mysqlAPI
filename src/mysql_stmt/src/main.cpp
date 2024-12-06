@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
     }
 
     /// 5 打开并读取文件
+    // std::string filename = "test_stmt.zip";
     std::string filename = "mysql.jpg";
-
     ///读取二进制
     std::fstream in(filename, std::ios::in | std::ios::binary);
     if (!in.is_open())
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     std::cout << row[0] << " " << row[1] << " " << row[3] << std::endl;
 
     /// 获取每列数据的大小
-    unsigned long *lens = mysql_fetch_lengths(res);
+    unsigned long *lens  = mysql_fetch_lengths(res);
     int            f_num = mysql_num_fields(res);
     for (int i = 0; i < f_num; i++)
     {

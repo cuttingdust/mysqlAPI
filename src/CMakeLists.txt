@@ -69,3 +69,21 @@ add_subdirectory(mysql_create_table)
 add_subdirectory(mysql_mul_exe_sql)
 add_subdirectory(mysql_transaction)
 add_subdirectory(mysql_stmt)
+add_subdirectory(mysql_proc)
+
+# 拷贝asset目录到输出目录
+set(ASSET_PATH ${CMAKE_CURRENT_SOURCE_DIR}/asset)
+
+# 查找源目录中的所有文件
+file(GLOB_RECURSE FILES_TO_COPY "${ASSET_PATH}/*")
+
+# 循环复制文件到目标目录
+foreach(FILE ${FILES_TO_COPY})
+    # 获取仅文件名
+    get_filename_component(FILENAME ${FILE} NAME)
+    
+    # 复制文件到目标目录
+    file(COPY ${FILE} DESTINATION ${OUT_RUN_PATH})
+	message("CPOY ${FILE}")
+endforeach()
+
