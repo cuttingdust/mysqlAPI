@@ -70,6 +70,8 @@ add_subdirectory(mysql_mul_exe_sql)
 add_subdirectory(mysql_transaction)
 add_subdirectory(mysql_stmt)
 add_subdirectory(mysql_proc)
+add_subdirectory(mysql_api)
+add_subdirectory(mysql_api_test)
 
 # 拷贝asset目录到输出目录
 set(ASSET_PATH ${CMAKE_CURRENT_SOURCE_DIR}/asset)
