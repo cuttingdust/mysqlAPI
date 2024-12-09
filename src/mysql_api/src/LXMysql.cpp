@@ -104,6 +104,24 @@ auto LXData::loadFile(const char *fileName) -> bool
     return true;
 }
 
+auto LXData::saveFile(const char *fileName) -> bool
+{
+    if (!data || size <= 0)
+        return false;
+
+    if (!fileName)
+        return false;
+    std::fstream out(fileName, std::ios::out | std::ios::binary);
+    if (!out.is_open())
+    {
+        std::cerr << "SaveFile " << fileName << " failed!" << std::endl;
+        return false;
+    }
+    out.write(data, size);
+    out.close();
+    return true;
+}
+
 auto LXData::drop() -> void
 {
     delete data;

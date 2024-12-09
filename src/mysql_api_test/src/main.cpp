@@ -66,21 +66,34 @@ int main(int argc, char *argv[])
     kv[col_data] = file1;
     kv[col_size] = &file1.size;
     my.insertBin(kv, table_name);
+    file1.drop();
 
     /// 获取结果集
     sql = std::format("SELECT * FROM `{0}`", table_name);
     std::cout << my.query(sql.c_str()) << std::endl;
     my.storeResult(); /// 结果集本地全部存储
 
+    int i = 0;
     for (;;)
     {
         auto row = my.fetchRow();
-        if (row.size() == 0)
+        if (row.empty())
             break;
-        for (int i = 0; i < row.size(); i++)
+        for (auto data : row)
         {
-            if (row[i].data)
-                std::cout << row[i].data << " ";
+            if (data.data)
+            {
+                if (data.type == LXData::LXD_TYPE_BLOB)
+                {
+                    data.saveFile(std::format("mysql_{0}.jpg", i).c_str());
+                    i++;
+                }
+                std::cout << data.data << " ";
+            }
+            else
+            {
+                std::cout << "NULL ";
+            }
         }
         std::cout << std::endl;
     }

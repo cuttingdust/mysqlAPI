@@ -71,6 +71,7 @@ public:
     int          size = 0;
     LX_DATA_TYPE type = LX_DATA_TYPE::LXD_TYPE_INVALID;
     auto         loadFile(const char *fileName) -> bool;
+    auto         saveFile(const char *fileName) -> bool;
     auto         drop() -> void;
 };
 
