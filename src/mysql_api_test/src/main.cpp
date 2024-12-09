@@ -1,7 +1,6 @@
 #include <LXMysql.h>
 #include <iostream>
 #include <format>
-#include <thread>
 #include <chrono>
 
 int main(int argc, char *argv[])
@@ -35,7 +34,7 @@ int main(int argc, char *argv[])
                       "`{4}` INT,PRIMARY KEY(`{1}`))",
                       table_name, col_id, col_name, col_data, col_size);
 
-    std::cout << my.query(sql.c_str()) << std::endl;
+    std::cout << "create table: " << my.query(sql.c_str()) << std::endl;
 
 
     // /// 测试自动重连
@@ -47,7 +46,7 @@ int main(int argc, char *argv[])
     /// 插入一条记录
     sql = std::format("INSERT INTO `{0}` (`{1}`,`{2}`) VALUES ('{3}',{4})", table_name, col_name, col_size, "test",
                       100);
-    std::cout << my.query(sql.c_str()) << std::endl;
+    std::cout << "insert one job:" << my.query(sql.c_str()) << std::endl;
 
     XDATA kv;
     kv[col_name] = "test2";
@@ -68,6 +67,11 @@ int main(int argc, char *argv[])
     my.insertBin(kv, table_name);
     file1.drop();
 
+    XDATA kv2;
+    kv2[col_name] = "updtename001";
+    kv2[col_size] = "99999";
+    std::cout << "my.Update = " << my.update(kv2, table_name, "`id`=1") << std::endl;
+
     /// 获取结果集
     sql = std::format("SELECT * FROM `{0}`", table_name);
     std::cout << my.query(sql.c_str()) << std::endl;
@@ -79,12 +83,14 @@ int main(int argc, char *argv[])
         auto row = my.fetchRow();
         if (row.empty())
             break;
+
         for (auto data : row)
         {
             if (data.data)
             {
                 if (data.type == LXData::LXD_TYPE_BLOB)
                 {
+                    // row[2].saveFile(row[1].data);
                     data.saveFile(std::format("mysql_{0}.jpg", i).c_str());
                     i++;
                 }
@@ -99,7 +105,9 @@ int main(int argc, char *argv[])
     }
     my.freeResult();
 
-    std::cout << my.query(sql.c_str()) << std::endl;
+
+    std::cout << "select result:"<<my.query(sql.c_str()) << std::endl;
+
     my.useResult(); /// 开始接收结果集
     my.freeResult();
 

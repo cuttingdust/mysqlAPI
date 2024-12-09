@@ -325,7 +325,7 @@ auto LXMysql::fetchRow() -> std::vector<LXData>
     MYSQL_ROW r = mysql_fetch_row(impl_->result_);
     if (!r)
     {
-        std::cerr << "Mysql fetchRow failed! row is null!!!" << std::endl;
+        // std::cerr << "Mysql fetchRow failed! row is null!!!" << std::endl;
         return row;
     }
     unsigned long *lengths = mysql_fetch_lengths(impl_->result_);
@@ -460,4 +460,46 @@ auto LXMysql::insertBin(const XDATA &kv, const std::string &table_name) -> bool
 
     mysql_stmt_close(stmt);
     return true;
+}
+
+auto LXMysql::getUpdateSql(const XDATA &kv, const std::string &table_name, std::string where) -> std::string
+{
+    std::string sql;
+    if (kv.empty() || table_name.empty())
+    {
+        return sql;
+    }
+
+    std::vector<std::string> sets;
+    for (const auto &[key, data] : kv)
+    {
+        auto tmp = "`" + key + "`";
+        tmp += "=";
+        tmp += std::string("'") + data.data + std::string("'");
+        sets.emplace_back(tmp);
+    }
+
+    const std::string &set_str = join(sets, ",");
+    sql                        = std::format("UPDATE `{0}` SET {1} WHERE {2};", table_name, set_str, where);
+
+    return sql;
+}
+
+auto LXMysql::update(const XDATA &kv, const std::string &table_name, const std::string &where) -> int
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql update failed! msyql is not init!!!" << std::endl;
+        return -1;
+    }
+
+    const std::string &sql = getUpdateSql(kv, table_name, where);
+    if (sql.empty())
+    {
+        std::cerr << "Mysql update failed! sql is empty!!!" << std::endl;
+        return -1;
+    }
+    if (!query(sql.c_str()))
+        return -1;
+    return mysql_affected_rows(impl_->mysql_);
 }

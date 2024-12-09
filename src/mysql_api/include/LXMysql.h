@@ -202,6 +202,20 @@ public:
     /// \return 是否插入成功
     auto insertBin(const XDATA &kv, const std::string &table_name) -> bool;
 
+    /// \brief 生成修改Sql语句
+    /// \param kv <字段名,字段值>
+    /// \param table_name 表名
+    /// \param where 修改选中条件
+    /// \return 语句
+    auto getUpdateSql(const XDATA &kv, const std::string &table_name, std::string where) -> std::string;
+
+    /// \brief 修改数据库
+    /// \param kv  <字段名,字段值>
+    /// \param table_name 表名
+    /// \param where 修改选中条件
+    /// \return 修改的行号
+    auto update(const XDATA &kv, const std::string &table_name, const std::string &where) -> int;
+
 private:
     class PImpl;
     std::unique_ptr<PImpl> impl_;
