@@ -503,3 +503,65 @@ auto LXMysql::update(const XDATA &kv, const std::string &table_name, const std::
         return -1;
     return mysql_affected_rows(impl_->mysql_);
 }
+
+auto LXMysql::updateBin(const XDATA &kv, const std::string &table_name, const std::string &where) -> int
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql updateBin failed! msyql is not init!!!" << std::endl;
+        return -1;
+    }
+
+    if (kv.empty() || table_name.empty())
+    {
+        std::cerr << "Mysql updateBin failed! kv or table_name is empty!!!" << std::endl;
+        return -1;
+    }
+
+    std::vector<std::string> sets;
+    MYSQL_BIND               bind[256] = { 0 };
+    int                      i         = 0;
+    for (const auto &[key, data] : kv)
+    {
+        sets.emplace_back("`" + key + "`=?");
+        bind[i].buffer        = const_cast<char *>(data.data);
+        bind[i].buffer_length = data.size;
+        bind[i].buffer_type   = static_cast<enum_field_types>(data.type);
+        ++i;
+    }
+
+    const std::string &set_str = join(sets, ",");
+    const std::string &sql     = std::format("UPDATE `{0}` SET {1} WHERE {2};", table_name, set_str, where);
+
+    /// Ô¤´¦ÀíSQLÓï¾ä
+    MYSQL_STMT *stmt = mysql_stmt_init(impl_->mysql_);
+    if (!stmt)
+    {
+        std::cerr << "Mysql updateBin failed! mysql_stmt_init failed!!!" << std::endl;
+        return -1;
+    }
+
+    if (mysql_stmt_prepare(stmt, sql.c_str(), static_cast<unsigned long>(sql.size())) != 0)
+    {
+        mysql_stmt_close(stmt);
+        std::cerr << "Mysql updateBin failed! mysql_stmt_prepare failed!!!" << std::endl;
+        return -1;
+    }
+
+    if (mysql_stmt_bind_param(stmt, bind) != 0)
+    {
+        mysql_stmt_close(stmt);
+        std::cerr << "Mysql updateBin failed! mysql_stmt_bind_param failed!!!" << std::endl;
+        return -1;
+    }
+
+    if (mysql_stmt_execute(stmt) != 0)
+    {
+        mysql_stmt_close(stmt);
+        std::cerr << "Mysql updateBin failed! mysql_stmt_execute failed!!!" << std::endl;
+        return -1;
+    }
+
+    mysql_stmt_close(stmt);
+    return mysql_stmt_affected_rows(stmt);
+}

@@ -209,12 +209,19 @@ public:
     /// \return 语句
     auto getUpdateSql(const XDATA &kv, const std::string &table_name, std::string where) -> std::string;
 
-    /// \brief 修改数据库
+    /// \brief 修改数据库(非二进制数据)
     /// \param kv  <字段名,字段值>
     /// \param table_name 表名
     /// \param where 修改选中条件
-    /// \return 修改的行号
+    /// \return 返回更新数量，失败返回-1
     auto update(const XDATA &kv, const std::string &table_name, const std::string &where) -> int;
+
+    /// \brief 修改数据库(二进制数据)
+    /// \param kv  <字段名,字段值>
+    /// \param table_name 表名
+    /// \param where 修改选中条件
+    /// \return 返回更新数量，失败返回-1
+    int updateBin(const XDATA &kv, const std::string &table_name, const std::string &where);
 
 private:
     class PImpl;
