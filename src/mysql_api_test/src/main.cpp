@@ -1,18 +1,24 @@
 #include <LXMysql.h>
 #include <iostream>
 #include <format>
+#include <thread>
+#include <chrono>
 
 int main(int argc, char *argv[])
 {
     LXMysql my;
     /// 1 mysql 初始化
-    std::cout << "my.Init() = " << my.init() << std::endl;
+    my.init();
+    my.setConnectTimeout(3); /// 连接超时秒
+    my.setReconnect(true);   /// 自动重连
 
     /// 2 连接mysql 如果没有调用init 内部会自动调用
-    if (my.connect("localhost", "root", "Handabao123@", "laoxiaketang"))
+    if (!my.connect("192.168.1.89", "root", "Handabao123@", "laoxiaketang"))
     {
-        std::cout << "my.Connect success！" << std::endl;
+        std::cerr << "my.Connect failed!" << std::endl;
+        return -1;
     }
+    std::cout << "my.Connect success！" << std::endl;
 
     /// 3 执行sql语句创建表
     std::string       sql        = "";
@@ -30,6 +36,60 @@ int main(int argc, char *argv[])
                       table_name, col_id, col_name, col_data, col_size);
 
     std::cout << my.query(sql.c_str()) << std::endl;
+
+
+    // /// 测试自动重连
+    // for (;;)
+    // {
+    //     std::cout << my.query(sql.c_str()) << std::flush;
+    // }
+
+    /// 插入一条记录
+    sql = std::format("INSERT INTO `{0}` (`{1}`,`{2}`) VALUES ('{3}',{4})", table_name, col_name, col_size, "test",
+                      100);
+    std::cout << my.query(sql.c_str()) << std::endl;
+
+    XDATA kv;
+    kv[col_name] = "test2";
+    kv[col_size] = "200";
+    my.insert(kv, table_name);
+
+    kv[col_name] = "test3";
+    kv[col_size] = "300";
+    my.insert(kv, table_name);
+
+    /// 二进制数据插入
+    const std::string &fileName = "mysql.jpg";
+    LXData             file1;
+    file1.loadFile("mysql.jpg");
+    kv[col_name] = fileName.c_str();
+    kv[col_data] = file1;
+    kv[col_size] = &file1.size;
+    my.insertBin(kv, table_name);
+
+    /// 获取结果集
+    sql = std::format("SELECT * FROM `{0}`", table_name);
+    std::cout << my.query(sql.c_str()) << std::endl;
+    my.storeResult(); /// 结果集本地全部存储
+
+    for (;;)
+    {
+        auto row = my.fetchRow();
+        if (row.size() == 0)
+            break;
+        for (int i = 0; i < row.size(); i++)
+        {
+            if (row[i].data)
+                std::cout << row[i].data << " ";
+        }
+        std::cout << std::endl;
+    }
+    my.freeResult();
+
+    std::cout << my.query(sql.c_str()) << std::endl;
+    my.useResult(); /// 开始接收结果集
+    my.freeResult();
+
 
     my.close();
     std::cin.get();

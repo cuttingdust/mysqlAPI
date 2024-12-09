@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     /// 单线程模式 mysql_init自动调用 mysql_library_init 线程不安全
     mysql_init(&mysql);
 
-    const char *host   = "192.168.1.89";
+    const char *host   = "192.168.1.88";
     const char *user   = "root";
     const char *passwd = "Handabao123@";
     const char *db     = "mysql";
