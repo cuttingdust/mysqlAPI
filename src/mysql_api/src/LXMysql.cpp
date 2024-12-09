@@ -565,3 +565,67 @@ auto LXMysql::updateBin(const XDATA &kv, const std::string &table_name, const st
     mysql_stmt_close(stmt);
     return mysql_stmt_affected_rows(stmt);
 }
+
+auto LXMysql::startTransaction() -> bool
+{
+    /// return query("set autocommit=0");
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql startTransaction failed! msyql is not init!!!" << std::endl;
+        return false;
+    }
+    if (mysql_autocommit(impl_->mysql_, false) != 0)
+    {
+        std::cerr << "Mysql startTransaction failed! mysql_autocommit failed!!!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+auto LXMysql::commit() -> bool
+{
+    /// return query("commit");
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql commit failed! msyql is not init!!!" << std::endl;
+        return false;
+    }
+    if (mysql_commit(impl_->mysql_) != 0)
+    {
+        std::cerr << "Mysql commit failed! mysql_commit failed!!!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+auto LXMysql::rollback() -> bool
+{
+    /// return query("rollback");
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql rollback failed! msyql is not init!!!" << std::endl;
+        return false;
+    }
+    if (mysql_rollback(impl_->mysql_) != 0)
+    {
+        std::cerr << "Mysql rollback failed! mysql_rollback failed!!!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+auto LXMysql::stopTransaction() -> bool
+{
+    /// return query("set autocommit=1");
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql stopTransaction failed! msyql is not init!!!" << std::endl;
+        return false;
+    }
+    if (mysql_autocommit(impl_->mysql_, true) != 0)
+    {
+        std::cerr << "Mysql stopTransaction failed! mysql_commit failed!!!" << std::endl;
+        return false;
+    }
+    return true;
+}

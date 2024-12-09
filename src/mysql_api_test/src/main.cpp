@@ -43,21 +43,42 @@ int main(int argc, char *argv[])
     //     std::cout << my.query(sql.c_str()) << std::flush;
     // }
 
-    /// 插入一条记录
+    // /// 插入一条记录
     // sql = std::format("INSERT INTO `{0}` (`{1}`,`{2}`) VALUES ('{3}',{4})", table_name, col_name, col_size, "test",
     //                   100);
     // std::cout << "insert one job:" << my.query(sql.c_str()) << std::endl;
 
-    // XDATA kv;
-    // kv[col_name] = "test2";
-    // kv[col_size] = "200";
-    // my.insert(kv, table_name);
-    //
-    // kv[col_name] = "test3";
-    // kv[col_size] = "300";
-    // my.insert(kv, table_name);
+    my.startTransaction();
+    XDATA kv;
+    kv[col_name] = "transaction001";
+    kv[col_size] = "200";
+    my.insert(kv, table_name);
 
-    /// 二进制数据插入
+    kv[col_name] = "transaction002";
+    kv[col_size] = "300";
+    my.insert(kv, table_name);
+    my.rollback();
+
+    kv[col_name] = "transaction003";
+    kv[col_size] = "300";
+    my.insert(kv, table_name);
+    kv[col_name] = "transaction004";
+    kv[col_size] = "300";
+    my.insert(kv, table_name);
+
+    my.commit();
+    my.stopTransaction();
+
+    kv[col_name] = "transaction005";
+    kv[col_size] = "200";
+    my.insert(kv, table_name);
+
+    kv[col_name] = "transaction006";
+    kv[col_size] = "300";
+    my.insert(kv, table_name);
+    my.rollback();
+
+    // /// 二进制数据插入
     // const std::string &fileName = "mysql.jpg";
     // LXData             file1;
     // file1.loadFile("mysql.jpg");
@@ -67,22 +88,22 @@ int main(int argc, char *argv[])
     // my.insertBin(kv, table_name);
     // file1.drop();
 
-    /// 修改数据
-    XDATA updateKV;
-    updateKV[col_name] = "updtename001";
-    updateKV[col_size] = "99999";
-    std::cout << "my.Update = " << my.update(updateKV, table_name, "`id`=1") << std::endl;
-
-    /// 修改数据
-    XDATA              updateKV2;
-    const std::string &file2Name = "mysql2.jpg";
-    LXData             file2;
-    file2.loadFile(file2Name.c_str());
-    updateKV2[col_name] = file2Name.c_str();
-    updateKV2[col_data] = file2;
-    updateKV2[col_size] = &file2.size;
-    std::cout << "my.UpdateBin = " << my.updateBin(updateKV2, table_name, "`id`=79") << std::endl;
-    file2.drop();
+    // /// 修改数据
+    // XDATA updateKV;
+    // updateKV[col_name] = "updtename001";
+    // updateKV[col_size] = "99999";
+    // std::cout << "my.Update = " << my.update(updateKV, table_name, "`id`=1") << std::endl;
+    //
+    // /// 修改数据
+    // XDATA              updateKV2;
+    // const std::string &file2Name = "mysql2.jpg";
+    // LXData             file2;
+    // file2.loadFile(file2Name.c_str());
+    // updateKV2[col_name] = file2Name.c_str();
+    // updateKV2[col_data] = file2;
+    // updateKV2[col_size] = &file2.size;
+    // std::cout << "my.UpdateBin = " << my.updateBin(updateKV2, table_name, "`id`=79") << std::endl;
+    // file2.drop();
 
     /// 获取结果集
     sql = std::format("SELECT * FROM `{0}`", table_name);
@@ -118,7 +139,7 @@ int main(int argc, char *argv[])
     my.freeResult();
 
 
-    std::cout << "select result:" << my.query(sql.c_str()) << std::endl;
+    std::cout << "select * result:" << my.query(sql.c_str()) << std::endl;
 
     my.useResult(); /// 开始接收结果集
     my.freeResult();

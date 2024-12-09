@@ -223,6 +223,22 @@ public:
     /// \return 返回更新数量，失败返回-1
     int updateBin(const XDATA &kv, const std::string &table_name, const std::string &where);
 
+    /// \brief 开启事务
+    /// \return
+    auto startTransaction() -> bool;
+
+    /// \brief 提交
+    /// \return
+    auto commit() -> bool;
+
+    /// \brief 回滚
+    /// \return
+    auto rollback() -> bool;
+
+    /// \brief 关闭事务
+    /// \return
+    auto stopTransaction() -> bool;
+
 private:
     class PImpl;
     std::unique_ptr<PImpl> impl_;
