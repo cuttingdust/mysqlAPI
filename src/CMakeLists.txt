@@ -72,6 +72,7 @@ add_subdirectory(mysql_stmt)
 add_subdirectory(mysql_proc)
 add_subdirectory(mysql_api)
 add_subdirectory(mysql_api_test)
+add_subdirectory(test_gbk_utf8)
 
 # 拷贝asset目录到输出目录
 set(ASSET_PATH ${CMAKE_CURRENT_SOURCE_DIR}/asset)

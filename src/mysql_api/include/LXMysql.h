@@ -65,7 +65,6 @@ public:
     LXData(const char *data, int size, const LX_DATA_TYPE &type);
     LXData(const int *d);
 
-
 public:
     const char  *data = nullptr;
     int          size = 0;
