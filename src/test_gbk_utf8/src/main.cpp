@@ -3,6 +3,30 @@
 #include <chrono>
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <iconv.h>
+#endif
+
+#ifndef _WIN32
+static size_t convert(char *from_cha, char *to_cha, char *in, size_t inlen, char *out, size_t outlen)
+{
+    /// 转换上下文
+    iconv_t cd;
+    cd = iconv_open(to_cha, from_cha);
+    if (cd == 0)
+        return -1;
+    memset(out, 0, outlen);
+    char **pin  = &in;
+    char **pout = &out;
+    // std::cout << "in = " << in << std::endl;
+    // std::cout << "inlen = " << inlen << std::endl;
+    // std::cout << "outlen = " << outlen << std::endl;
+    //返回转换字节数的数量，但是转GBK时经常不正确 >=0就成功
+    size_t re = iconv(cd, pin, &inlen, pout, &outlen);
+    iconv_close(cd);
+    // std::cout << "result = " << (int)result << std::endl;
+    return re;
+}
 #endif
 
 std::string UTF8ToGBK(const char *data)
@@ -34,6 +58,14 @@ std::string UTF8ToGBK(const char *data)
         return result;
     result.resize(len);
     WideCharToMultiByte(CP_ACP, 0, (wchar_t *)udata.data(), -1, (char *)result.data(), len, 0, 0);
+#else
+    result.resize(1024);
+    int inlen = strlen(data);
+    // std::cout << "inlen=" << inlen << std::endl;
+    convert((char *)"utf-8", (char *)"gbk", (char *)data, inlen, (char *)result.data(), result.size());
+    int outlen = strlen(result.data());
+    //std::cout << "outlen = " << outlen << std::endl;
+    result.resize(outlen);
 #endif
     return result;
 }
@@ -67,6 +99,13 @@ std::string GBKToUTF8(const char *data)
         return result;
     result.resize(len);
     WideCharToMultiByte(CP_UTF8, 0, (wchar_t *)udata.data(), -1, (char *)result.data(), len, 0, 0);
+#else
+    result.resize(1024);
+    int inlen = strlen(data);
+    convert((char *)"gbk", (char *)"utf-8", (char *)data, inlen, (char *)result.data(), result.size());
+    int outlen = strlen(result.data());
+    // std::cout << "outlen = " << outlen << std::endl;
+    result.resize(outlen);
 #endif
     return result;
 }
