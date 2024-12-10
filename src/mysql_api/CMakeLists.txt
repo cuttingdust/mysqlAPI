@@ -16,8 +16,6 @@ elseif(APPLE)
     iconv
   )
 endif()
-  )
-endif()
 
 cpp_library(${PROJECT_NAME})
 
