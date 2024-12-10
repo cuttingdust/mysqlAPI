@@ -77,6 +77,7 @@ public:
 };
 
 using XDATA = std::map<std::string, LXData>;
+using XROWS = std::vector<std::vector<LXData>>;
 
 class LXM_EXPORT LXMysql
 {
@@ -239,6 +240,10 @@ public:
     /// \brief 关闭事务
     /// \return
     auto stopTransaction() -> bool;
+
+    /// \brief 简易接口,返回select的数据结果，每次调用清理上一次的结果集
+    /// \return
+    auto getResult(const char *sql) -> XROWS;
 
 private:
     class PImpl;

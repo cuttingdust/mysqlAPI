@@ -737,3 +737,38 @@ auto LXMysql::stopTransaction() -> bool
     }
     return true;
 }
+
+auto LXMysql::getResult(const char *sql) -> XROWS
+{
+    freeResult();
+
+    XROWS rows;
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql getResult failed! msyql is not init!!!" << std::endl;
+        return rows;
+    }
+    if (!sql)
+    {
+        std::cerr << "Mysql getResult failed! sql is null!!!" << std::endl;
+        return rows;
+    }
+    if (!query(sql))
+    {
+        std::cerr << "Mysql getResult failed! query failed!!!" << std::endl;
+        return rows;
+    }
+    if (!storeResult())
+    {
+        std::cerr << "Mysql getResult failed! storeResult failed!!!" << std::endl;
+        return rows;
+    }
+    for (;;)
+    {
+        auto row = fetchRow();
+        if (row.empty())
+            break;
+        rows.emplace_back(row);
+    }
+    return rows;
+}

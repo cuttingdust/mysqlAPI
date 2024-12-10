@@ -169,7 +169,39 @@ int main(int argc, char *argv[])
         my.insert(data, table_name_gbk);
         my.insert(data, table_name_gbk);
         my.insert(data, table_name_gbk);
+        data["name"] = (char *)u8"²âÊÔµÄGBKÖĞÎÄ2";
+        my.insert(data, table_name_gbk);
     }
+
+    XROWS rows = my.getResult("select * from t_gbk");
+    for (int i = 0; i < rows.size(); i++)
+    {
+        auto row = rows[i];
+        for (int i = 0; i < row.size(); i++)
+        {
+            if (!row[i].data)
+            {
+                std::cout << "[NULL],";
+                continue;
+            }
+            switch (row[i].type)
+            {
+                case LXData::LXD_TYPE_BLOB:
+                    std::cout << "[BLOB]";
+                    break;
+                case LXData::LXD_TYPE_LONG:
+                case LXData::LXD_TYPE_STRING:
+                default:
+                    std::cout << row[i].data;
+                    break;
+            }
+
+            std::cout << ",";
+        }
+
+        std::cout << std::endl;
+    }
+
 
     my.freeResult();
     my.close();
