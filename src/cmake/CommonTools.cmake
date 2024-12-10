@@ -296,7 +296,7 @@ function(cpp_library name)
 
     # 支持find_package
     # 生成并安装配置文件
-    instaLl(EXPORT ${name} FILE ${name}Config.cmake
+    install(EXPORT ${name} FILE ${name}Config.cmake
         DESTINATION ${CONF_VER_DIR}
     )
 
