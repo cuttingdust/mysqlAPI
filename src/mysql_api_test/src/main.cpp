@@ -174,11 +174,7 @@ int main(int argc, char *argv[])
         if (row.empty())
             break;
 
-#ifdef _WIN32
         std::cout << "id:" << row[0].data << " name:" << row[1].data << std::endl;
-#else
-        cout << "id:" << row[0].data << " name:" << row[1].data << endl;
-#endif
     }
     my.freeResult();
     my.close();
