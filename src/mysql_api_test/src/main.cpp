@@ -2,6 +2,7 @@
 #include <iostream>
 #include <format>
 #include <chrono>
+#include <thread>
 
 int main(int argc, char *argv[])
 {
@@ -21,20 +22,20 @@ int main(int argc, char *argv[])
 
     /// 3 执行sql语句创建表
     std::string       sql        = "";
-    const std::string table_name = "t_video2";
+    std::string       table_name = "t_video2";
     const std::string col_id     = "id";
     const std::string col_name   = "name";
     const std::string col_data   = "data";
     const std::string col_size   = "size";
 
-    sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
-                      "`{1}` INT AUTO_INCREMENT, "
-                      "`{2}` VARCHAR(1024),"
-                      "`{3}` BLOB,"
-                      "`{4}` INT,PRIMARY KEY(`{1}`))",
-                      table_name, col_id, col_name, col_data, col_size);
-
-    std::cout << "create table: " << my.query(sql.c_str()) << std::endl;
+    // sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+    //                   "`{1}` INT AUTO_INCREMENT, "
+    //                   "`{2}` VARCHAR(1024),"
+    //                   "`{3}` BLOB,"
+    //                   "`{4}` INT,PRIMARY KEY(`{1}`))",
+    //                   table_name, col_id, col_name, col_data, col_size);
+    //
+    // std::cout << "create table: " << my.query(sql.c_str()) << std::endl;
 
 
     // /// 测试自动重连
@@ -46,7 +47,11 @@ int main(int argc, char *argv[])
     // /// 插入一条记录
     // sql = std::format("INSERT INTO `{0}` (`{1}`,`{2}`) VALUES ('{3}',{4})", table_name, col_name, col_size, "test",
     //                   100);
+    // /// 测试表锁
+    // /// LOCK TABLES t_video2 WRITE;
+    // /// UNLOCK TABLES;
     // std::cout << "insert one job:" << my.query(sql.c_str()) << std::endl;
+    // std::cout << "=================表锁=========================" << std::endl;
 
     // /// 测试事务
     // my.startTransaction();
@@ -145,61 +150,103 @@ int main(int argc, char *argv[])
     // my.useResult(); /// 开始接收结果集
     // my.freeResult();
 
-
-    /// 开始测试字符集 问题， 插入，读取 GBK utf-8
-    std::cout << "开始测试字符集" << std::endl;
-    std::string       coding         = "utf8";
-    const std::string table_name_gbk = std::format("t_{}", coding);
-
-    // /// 测试utf8 指定字段name的 utf 字符集
-    // sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
-    //                   "`{1}` INT AUTO_INCREMENT,"
-    //                   "`{2}` VARCHAR(1024) CHARACTER SET "
-    //                   "{3} COLLATE {3}_bin,PRIMARY KEY(`{1}`))",
-    //                   table_name_gbk, col_id, col_name, coding);
-    //
-    // my.query(sql.c_str());
-    // /// 清空数据
-    // my.query(std::format("TRUNCATE {};", table_name_gbk).c_str());
-    // /// 指定与mysql处理的字符集
-    // my.query(std::format("SET NAMES {};", coding).c_str());
     // {
-    //     XDATA data;
-    //     data["name"] = (char *)u8"UTF8中文， 测试"; /// 现在是要和表的编码格式不一样的数据都不允许插入了 好像根本上杜绝
-    //     my.insert(data, table_name_gbk);
+    //     /// 开始测试字符集 问题， 插入，读取 GBK utf-8
+    //     std::cout << "开始测试字符集" << std::endl;
+    //     std::string       coding         = "utf8";
+    //     const std::string table_name_gbk = std::format("t_{}", coding);
+    //
+    //     /// 测试utf8 指定字段name的 utf 字符集
+    //     sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+    //                       "`{1}` INT AUTO_INCREMENT,"
+    //                       "`{2}` VARCHAR(1024) CHARACTER SET "
+    //                       "{3} COLLATE {3}_bin,PRIMARY KEY(`{1}`))",
+    //                       table_name_gbk, col_id, col_name, coding);
+    //
+    //     my.query(sql.c_str());
+    //     /// 清空数据
+    //     my.query(std::format("TRUNCATE {};", table_name_gbk).c_str());
+    //     /// 指定与mysql处理的字符集
+    //     my.query(std::format("SET NAMES {};", coding).c_str());
+    //     {
+    //         XDATA data;
+    //         data["name"] =
+    //                 (char *)u8"UTF8中文， 测试"; /// 现在是要和表的编码格式不一样的数据都不允许插入了 好像根本上杜绝
+    //         my.insert(data, table_name_gbk);
+    //     }
+    //
+    //     XROWS rows = my.getResult(std::format("select * from {}", table_name_gbk).c_str());
+    //     for (int i = 0; i < rows.size(); i++)
+    //     {
+    //         auto row = rows[i];
+    //         for (int i = 0; i < row.size(); i++)
+    //         {
+    //             if (!row[i].data)
+    //             {
+    //                 std::cout << "[NULL],";
+    //                 continue;
+    //             }
+    //             switch (row[i].type)
+    //             {
+    //                 case LXData::LXD_TYPE_BLOB:
+    //                     std::cout << "[BLOB]";
+    //                     break;
+    //                 case LXData::LXD_TYPE_LONG:
+    //                 case LXData::LXD_TYPE_STRING:
+    //                 default:
+    //                     std::cout << row[i].utf8ToGbk();
+    //                     break;
+    //             }
+    //
+    //             std::cout << "|";
+    //         }
+    //
+    //         std::cout << std::endl;
+    //     }
     // }
 
-    XROWS rows = my.getResult(std::format("select * from {}", table_name_gbk).c_str());
-    for (int i = 0; i < rows.size(); i++)
+    /// 订票模拟(事务) t_tickets(id int,sold int)
+    table_name                 = "t_tickets";
+    const std::string col_sold = "sold";
+    sql                        = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+                                                                    "`{1}` INT AUTO_INCREMENT,"
+                                                                    "`{2}` INT,"
+                                                                    "PRIMARY KEY(`{1}`))",
+                                             table_name, col_id, col_sold);
+    my.query(sql.c_str());
+
+
     {
-        auto row = rows[i];
-        for (int i = 0; i < row.size(); i++)
-        {
-            if (!row[i].data)
-            {
-                std::cout << "[NULL],";
-                continue;
-            }
-            switch (row[i].type)
-            {
-                case LXData::LXD_TYPE_BLOB:
-                    std::cout << "[BLOB]";
-                    break;
-                case LXData::LXD_TYPE_LONG:
-                case LXData::LXD_TYPE_STRING:
-                default:
-                    std::cout << row[i].utf8ToGbk();
-                    break;
-            }
+        XDATA data;
+        data["sold"] = "0";
+        my.insert(data, "t_tickets"); //id=1
+        my.startTransaction();
 
-            std::cout << "|";
-        }
+        bool        bIsUpdate  = true;
+        std::string str_update = "";
+        bIsUpdate ? str_update = "for update" : str_update = ""; /// 行锁
+        //行锁
+        sql = std::format("select * from {0} where {1} {2} {3};", table_name, std::format("{}=0", col_sold),
+                          std::format("order by {}", col_id), str_update);
+        // std::cout << sql << std::endl;
+        XROWS       rows = my.getResult(sql.c_str());
+        std::string id   = rows[0][0].data;
+        std::cout << "Buy ticket id is " << id << std::endl;
 
-        std::cout << std::endl;
+        /// 模拟冲突
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        data["sold"] = "1";
+        my.update(data, table_name, std::format("{}={}", col_id, id));
+
+        std::cout << "Buy ticket id  " << id << " success!" << std::endl;
+        sql = std::format("select * from {} where {} {};", table_name, std::format("{}={}", col_sold, 0), str_update);
+        // my.getResult(sql.c_str());
+        my.commit();
+        my.stopTransaction();
     }
 
 
-    my.freeResult();
+    // my.freeResult();
     my.close();
     std::cin.get();
     return 0;
