@@ -5,6 +5,11 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <iconv.h>
+#endif
 
 //////////////////////////////////工具函数///////////////////////////////////
 auto join(const std::vector<std::string> &strings, const std::string &delimiter) -> std::string
@@ -22,6 +27,28 @@ auto join(const std::vector<std::string> &strings, const std::string &delimiter)
 
     return oss.str(); /// 返回连接后的字符串
 }
+
+#ifndef _WIN32
+static size_t convert(char *from_cha, char *to_cha, char *in, size_t inlen, char *out, size_t outlen)
+{
+    /// 转换上下文
+    iconv_t cd;
+    cd = iconv_open(to_cha, from_cha);
+    if (cd == 0)
+        return -1;
+    memset(out, 0, outlen);
+    char **pin  = &in;
+    char **pout = &out;
+    // std::cout << "in = " << in << std::endl;
+    // std::cout << "inlen = " << inlen << std::endl;
+    // std::cout << "outlen = " << outlen << std::endl;
+    //返回转换字节数的数量，但是转GBK时经常不正确 >=0就成功
+    size_t re = iconv(cd, pin, &inlen, pout, &outlen);
+    iconv_close(cd);
+    // std::cout << "result = " << (int)result << std::endl;
+    return re;
+}
+#endif
 /////////////////////////////////////////////////////////////////////////////
 
 class LXMysql::PImpl
@@ -120,6 +147,87 @@ auto LXData::saveFile(const char *fileName) -> bool
     out.write(data, size);
     out.close();
     return true;
+}
+
+auto LXData::gbkToUtf8() const -> std::string
+{
+    std::string result = "";
+#ifdef _WIN32
+    /// GBK转unicode
+
+    /// 1.1 统计转换后字节数
+    int len = MultiByteToWideChar(CP_ACP, /// 转换的格式
+                                  0,      /// 默认的转换方式
+                                  data,   /// 输入的字节
+                                  -1,     /// 输入的字符串大小 -1 找\0
+                                  0,      /// 输出
+                                  0       /// 输出的空间大小
+    );
+    if (len <= 0)
+        return result;
+    std::wstring udata;
+    udata.resize(len);
+    MultiByteToWideChar(CP_ACP, 0, data, -1, (wchar_t *)udata.data(), len);
+
+    /// 2 unicode 转utf-8
+    len = WideCharToMultiByte(CP_UTF8, 0, (wchar_t *)udata.data(), -1, 0, 0,
+                              0, /// 失败默认替代字符
+                              0  /// s是否使用默认替代
+    );
+    if (len <= 0)
+        return result;
+    result.resize(len);
+    WideCharToMultiByte(CP_UTF8, 0, (wchar_t *)udata.data(), -1, (char *)result.data(), len, 0, 0);
+#else
+    result.resize(1024);
+    int inlen = strlen(data);
+    convert((char *)"gbk", (char *)"utf-8", (char *)data, inlen, (char *)result.data(), result.size());
+    int outlen = strlen(result.data());
+    // std::cout << "outlen = " << outlen << std::endl;
+    result.resize(outlen);
+#endif
+    return result;
+}
+
+auto LXData::utf8ToGbk() const -> std::string
+{
+    std::string result = "";
+#ifdef _WIN32
+    /// 1 UFT8 转为unicode win utf16
+
+    /// 1.1 统计转换后字节数
+    int len = MultiByteToWideChar(CP_UTF8, /// 转换的格式
+                                  0,       /// 默认的转换方式
+                                  data,    /// 输入的字节
+                                  -1,      /// 输入的字符串大小 -1 找\0
+                                  0,       /// 输出
+                                  0        /// 输出的空间大小
+    );
+    if (len <= 0)
+        return result;
+    std::wstring udata;
+    udata.resize(len);
+    MultiByteToWideChar(CP_UTF8, 0, data, -1, (wchar_t *)udata.data(), len);
+
+    /// 2 unicode 转GBK
+    len = WideCharToMultiByte(CP_ACP, 0, (wchar_t *)udata.data(), -1, 0, 0,
+                              0, /// 失败默认替代字符
+                              0  /// s是否使用默认替代
+    );
+    if (len <= 0)
+        return result;
+    result.resize(len);
+    WideCharToMultiByte(CP_ACP, 0, (wchar_t *)udata.data(), -1, (char *)result.data(), len, 0, 0);
+#else
+    result.resize(1024);
+    int inlen = strlen(data);
+    // std::cout << "inlen=" << inlen << std::endl;
+    convert((char *)"utf-8", (char *)"gbk", (char *)data, inlen, (char *)result.data(), result.size());
+    int outlen = strlen(result.data());
+    //std::cout << "outlen = " << outlen << std::endl;
+    result.resize(outlen);
+#endif
+    return result;
 }
 
 auto LXData::drop() -> void

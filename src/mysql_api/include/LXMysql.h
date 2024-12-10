@@ -71,6 +71,8 @@ public:
     LX_DATA_TYPE type = LX_DATA_TYPE::LXD_TYPE_INVALID;
     auto         loadFile(const char *fileName) -> bool;
     auto         saveFile(const char *fileName) -> bool;
+    auto         gbkToUtf8() const -> std::string;
+    auto         utf8ToGbk() const -> std::string;
     auto         drop() -> void;
 };
 

@@ -147,22 +147,29 @@ int main(int argc, char *argv[])
 
 
     /// 开始测试字符集 问题， 插入，读取 GBK utf-8
-    //   std::cout << "开始测试字符集" << std::endl;
-    //   /// 测试utf8 指定字段name的 utf 字符集
-    //   sql = "CREATE TABLE IF NOT EXISTS `t_utf8` \
-		// (`id` INT AUTO_INCREMENT,	\
-		// `name` VARCHAR(1024) CHARACTER SET utf8 COLLATE utf8_bin,\
-		// PRIMARY KEY(`id`))";
-    //   my.query(sql.c_str());
-    //   /// 清空数据
-    //   my.query("TRUNCATE t_utf8");
-    //   /// 指定与mysql处理的字符集
-    //   my.query("SET NAMES UTF8");
-    //   {
-    //       XDATA data;
-    //       data["name"] = reinterpret_cast<const char *>(u8"测试的UTF中文");
-    //       my.insert(data, "t_utf8");
-    //   }
+    std::cout << "开始测试字符集" << std::endl;
+    std::string       coding         = "gbk";
+    const std::string table_name_gbk = std::format("T_{}", coding);
+
+    /// 测试utf8 指定字段name的 utf 字符集
+    sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+                      "`{1}` INT AUTO_INCREMENT,"
+                      "`{2}` VARCHAR(1024) CHARACTER SET "
+                      "{3} COLLATE {3}_bin,PRIMARY KEY(`{1}`))",
+                      table_name_gbk, col_id, col_name, coding);
+
+    my.query(sql.c_str());
+    /// 清空数据
+    my.query(std::format("TRUNCATE {};", table_name_gbk).c_str());
+    /// 指定与mysql处理的字符集
+    my.query("SET NAMES GBK");
+    {
+        XDATA data;
+        data["name"] = "测试的GBK中文";
+        my.insert(data, table_name_gbk);
+        my.insert(data, table_name_gbk);
+        my.insert(data, table_name_gbk);
+    }
 
     my.freeResult();
     my.close();
