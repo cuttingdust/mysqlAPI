@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     my.setReconnect(true);   /// 自动重连
 
     /// 2 连接mysql 如果没有调用init 内部会自动调用
-    if (!my.connect("192.168.1.89", "root", "Handabao123@", "laoxiaketang"))
+    if (!my.connect("mac.hildness.top", "root", "Handabao123@", "laoxiaketang"))
     {
         std::cerr << "my.Connect failed!" << std::endl;
         return -1;
@@ -148,32 +148,28 @@ int main(int argc, char *argv[])
 
     /// 开始测试字符集 问题， 插入，读取 GBK utf-8
     std::cout << "开始测试字符集" << std::endl;
-    std::string       coding         = "gbk";
-    const std::string table_name_gbk = std::format("T_{}", coding);
+    std::string       coding         = "utf8";
+    const std::string table_name_gbk = std::format("t_{}", coding);
 
-    /// 测试utf8 指定字段name的 utf 字符集
-    sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
-                      "`{1}` INT AUTO_INCREMENT,"
-                      "`{2}` VARCHAR(1024) CHARACTER SET "
-                      "{3} COLLATE {3}_bin,PRIMARY KEY(`{1}`))",
-                      table_name_gbk, col_id, col_name, coding);
+    // /// 测试utf8 指定字段name的 utf 字符集
+    // sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+    //                   "`{1}` INT AUTO_INCREMENT,"
+    //                   "`{2}` VARCHAR(1024) CHARACTER SET "
+    //                   "{3} COLLATE {3}_bin,PRIMARY KEY(`{1}`))",
+    //                   table_name_gbk, col_id, col_name, coding);
+    //
+    // my.query(sql.c_str());
+    // /// 清空数据
+    // my.query(std::format("TRUNCATE {};", table_name_gbk).c_str());
+    // /// 指定与mysql处理的字符集
+    // my.query(std::format("SET NAMES {};", coding).c_str());
+    // {
+    //     XDATA data;
+    //     data["name"] = (char *)u8"UTF8中文， 测试"; /// 现在是要和表的编码格式不一样的数据都不允许插入了 好像根本上杜绝
+    //     my.insert(data, table_name_gbk);
+    // }
 
-    my.query(sql.c_str());
-    /// 清空数据
-    my.query(std::format("TRUNCATE {};", table_name_gbk).c_str());
-    /// 指定与mysql处理的字符集
-    my.query("SET NAMES GBK");
-    {
-        XDATA data;
-        data["name"] = "测试的GBK中文";
-        my.insert(data, table_name_gbk);
-        my.insert(data, table_name_gbk);
-        my.insert(data, table_name_gbk);
-        data["name"] = (char *)u8"测试的GBK中文2";
-        my.insert(data, table_name_gbk);
-    }
-
-    XROWS rows = my.getResult("select * from t_gbk");
+    XROWS rows = my.getResult(std::format("select * from {}", table_name_gbk).c_str());
     for (int i = 0; i < rows.size(); i++)
     {
         auto row = rows[i];
@@ -192,11 +188,11 @@ int main(int argc, char *argv[])
                 case LXData::LXD_TYPE_LONG:
                 case LXData::LXD_TYPE_STRING:
                 default:
-                    std::cout << row[i].data;
+                    std::cout << row[i].utf8ToGbk();
                     break;
             }
 
-            std::cout << ",";
+            std::cout << "|";
         }
 
         std::cout << std::endl;
