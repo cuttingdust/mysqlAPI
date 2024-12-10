@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 
     const char *host   = "192.168.1.89";
     const char *user   = "root";
-    const char *passwd = "Handabao123@";
+    const char *passwd = "System123@";
     const char *db     = "mysql";
 
     int to = 3;                                                     /// ³¬Ê±Ê±¼ä

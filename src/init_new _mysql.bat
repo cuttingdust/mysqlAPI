@@ -10,7 +10,7 @@ REM 展示
 show databases;
 
 REM 修改密码
-alter user 'root'@'host' identified by 'Handabao123@';
+alter user 'root'@'host' identified by 'System123@';
 flish privileges;
 
 REM 远程连接
