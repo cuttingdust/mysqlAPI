@@ -1,11 +1,14 @@
 #include <iostream>
 #include <format>
 #include <chrono>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 std::string UTF8ToGBK(const char *data)
 {
     std::string result = "";
+#ifdef _WIN32
     /// 1 UFT8 转为unicode win utf16
 
     /// 1.1 统计转换后字节数
@@ -31,12 +34,14 @@ std::string UTF8ToGBK(const char *data)
         return result;
     result.resize(len);
     WideCharToMultiByte(CP_ACP, 0, (wchar_t *)udata.data(), -1, (char *)result.data(), len, 0, 0);
+#endif
     return result;
 }
 
 std::string GBKToUTF8(const char *data)
 {
     std::string result = "";
+#ifdef _WIN32
     /// GBK转unicode
 
     /// 1.1 统计转换后字节数
@@ -62,6 +67,7 @@ std::string GBKToUTF8(const char *data)
         return result;
     result.resize(len);
     WideCharToMultiByte(CP_UTF8, 0, (wchar_t *)udata.data(), -1, (char *)result.data(), len, 0, 0);
+#endif
     return result;
 }
 
@@ -69,12 +75,13 @@ int main(int argc, char *argv[])
 {
     std::cout << "Hello, world!；你好，世界" << std::endl;
 
-    /// 1 测试UTF-8转GBK
-    std::cout << UTF8ToGBK(reinterpret_cast<const char *>(u8"测试UTF-8转GBK")) << std::endl;
+    /// 1 测试GBK 转换UTF-8,再转成GBK
+    std::string gbk_string = "测试GBK 转换UTF-8,再转成GBK";
+    std::cout << "GBK: " << gbk_string << std::endl;
+    auto utf8_string = GBKToUTF8(gbk_string.c_str());
+    std::cout << "UTF-8: " << utf8_string << std::endl;
+    auto gbk_string2 = UTF8ToGBK(utf8_string.c_str());
+    std::cout << "GBK: " << gbk_string2 << std::endl;
 
-    /// 2 测试GBK到UTF-8的转换
-    std::string uft8 = GBKToUTF8("测试GBK转UTF-8再转为GBK");
-    std::cout << "utf8=" << uft8 << std::endl;
-    std::cout << UTF8ToGBK(uft8.c_str()) << std::endl;
     return 0;
 }
