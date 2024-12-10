@@ -14,6 +14,7 @@ elseif(APPLE)
     libssl.3.dylib
     libcrypto.3.dylib
     iconv
+  )
 endif()
   )
 endif()
