@@ -122,5 +122,8 @@ int main(int argc, char *argv[])
     auto gbk_string2 = UTF8ToGBK(utf8_string.c_str());
     std::cout << "GBK: " << gbk_string2 << std::endl;
 
+    // auto utf8_mac = u8"测试UTF8转换GBK, 再转成UTF8";
+    // std::cout << utf8_mac << std::endl;
+
     return 0;
 }
