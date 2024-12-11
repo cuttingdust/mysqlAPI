@@ -160,14 +160,18 @@ auto XAgent::getLocalIp() -> std::string
     {
         /// ipv4
         if (iter->ifa_addr->sa_family == AF_INET)
+#ifdef __APPLE__
+            if (strcmp(iter->ifa_name, "lo0") != 0) /// 去掉回环地址 127.0.0.1
+#else
             if (strcmp(iter->ifa_name, "lo") != 0) /// 去掉回环地址 127.0.0.1
+#endif
             {
-                /// 转换整形ip为字符串
-
+                /// 转换整形ip为字符串
                 void *tmp = &((sockaddr_in *)iter->ifa_addr)->sin_addr;
                 /// const char *
                 /// inet_ntop(int af, const void * restrict src, char * restrict dst, socklen_t size);
                 inet_ntop(AF_INET, tmp, ip, INET_ADDRSTRLEN);
+                std::cout << ip << std::endl;
                 break;
             }
         iter = iter->ifa_next;
