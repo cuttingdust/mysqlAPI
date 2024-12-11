@@ -10,15 +10,16 @@
 constexpr int FILE_LINE_LEN = 1024;
 long          g_curr_offset = 0;
 
-int32_t c_tail(const char *file)
+std::string tail(const char *file)
 {
+    std::string result;
     if (!file)
-        return -1;
+        return result;
     FILE *fp = fopen(file, "rb");
     if (!fp)
     {
-        printf("cant open file, file: %s\n", file);
-        return -2;
+        // printf("cant open file, file: %s\n", file);
+        return result;
     }
 
     fseek(fp, g_curr_offset, SEEK_SET);
@@ -34,12 +35,13 @@ int32_t c_tail(const char *file)
             continue;
         text[len - 1] = 0;
         g_curr_offset += len;
-        printf("%s\n", text);
+        result = text;
+        // printf("%s\n", text);
     }
 
     fclose(fp);
 
-    return 0;
+    return result;
 }
 
 class XAgent::PImpl
@@ -106,7 +108,11 @@ auto XAgent::main() -> void
 {
     for (;;) /// ÎÞÏÞÑ­»·
     {
-        c_tail(LOGPATH);
+        if (std::string log = tail(LOGPATH); !log.empty())
+        {
+            std::cout << log << std::endl;
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
