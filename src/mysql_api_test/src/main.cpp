@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     my.setReconnect(true);   /// 自动重连
 
     /// 2 连接mysql 如果没有调用init 内部会自动调用
-    if (!my.connect("localhost", "root", "System123@", "laoxiaketang"))
+    if (!my.connect("localhost", "root", "System123@", "laoxiaketang")
     {
         std::cerr << "my.Connect failed!" << std::endl;
         return -1;
