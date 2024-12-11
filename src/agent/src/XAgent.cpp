@@ -91,6 +91,11 @@ auto XAgent::init(const std::string &ip) -> bool
         return false;
     }
     std::cout << "open log " << LOGPATH << " success!" << std::endl;
+
+    fseek(fp, 0, SEEK_END);
+    g_curr_offset = ftell(fp);
+    fseek(fp, 0, 0);
+
     /// 只审计系统开始运行之后事件
     fclose(fp);
 
