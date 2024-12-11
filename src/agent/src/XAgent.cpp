@@ -150,22 +150,29 @@ auto XAgent::getLocalIp() -> std::string
 {
     char ip[16] = { 0 };
 #ifndef _WIN32
-    ifaddrs *ifadd = NULL;
+    ifaddrs *ifadd = 0;
     if (getifaddrs(&ifadd) != 0)
+        return "";
+    /// 遍历地址
+    ifaddrs *iter = ifadd;
+
+    while (iter != NULL)
     {
-        return ip;
-    }
-    for (ifaddrs *iter = ifadd; iter != NULL; iter = iter->ifa_next)
-    {
-        if (iter->ifa_addr->sa_family == AF_INET &&
-            memcmp(&((sockaddr_in *)iter->ifa_addr)->sin_addr, &(in_addr){ { 127, 0, 0, 1 } }, sizeof(in_addr)) != 0)
-        {
-            inet_ntop(AF_INET, &((sockaddr_in *)iter->ifa_addr)->sin_addr, ip, INET_ADDRSTRLEN);
-            break;
-        }
+        /// ipv4
+        if (iter->ifa_addr->sa_family == AF_INET)
+            if (strcmp(iter->ifa_name, "lo") != 0) /// 去掉回环地址 127.0.0.1
+            {
+                /// 转换整形ip为字符串
+
+                void *tmp = &((sockaddr_in *)iter->ifa_addr)->sin_addr;
+                /// const char *
+                /// inet_ntop(int af, const void * restrict src, char * restrict dst, socklen_t size);
+                inet_ntop(AF_INET, tmp, ip, INET_ADDRSTRLEN);
+                break;
+            }
+        iter = iter->ifa_next;
     }
     freeifaddrs(ifadd);
-    std::cout << "Non-loopback IPv4 address: " << ip << std::endl;
 #else
 
     WSADATA wsaData;
