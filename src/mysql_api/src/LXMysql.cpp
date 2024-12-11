@@ -472,7 +472,15 @@ auto LXMysql::getInsertSql(const XDATA &kv, const std::string &table_name) -> st
     {
         auto tmp = "`" + key + "`";
         keys.emplace_back(tmp);
-        tmp = std::string("'") + data.data + std::string("'");
+        if (data.data[0] == '@')
+        {
+            tmp = data.data;
+            tmp = tmp.substr(1, tmp.size() - 1);
+        }
+        else
+        {
+            tmp = std::string("'") + data.data + std::string("'");
+        }
         values.emplace_back(tmp);
     }
 

@@ -26,8 +26,13 @@ public:
     }
 
 public:
+    auto tail(const char* file) -> std::string;
+    auto getLocalIp() -> std::string;
+
+public:
     auto init(const std::string& ip) -> bool;
     auto main() -> void;
+    auto saveLog(const std::string& log) -> bool;
 
 private:
     class PImpl;
