@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
         std::cout << "Agent init failed!" << std::endl;
         return -1;
     }
+    XAgent::get()->main();
     std::cout << "Agent start!" << std::endl;
 
     return 0;

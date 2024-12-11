@@ -27,6 +27,7 @@ public:
 
 public:
     auto init(const std::string& ip) -> bool;
+    auto main() -> void;
 
 private:
     class PImpl;
