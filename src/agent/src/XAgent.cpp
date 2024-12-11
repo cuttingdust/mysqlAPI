@@ -4,7 +4,43 @@
 #include <LXMysql.h>
 #include <thread>
 
-#define LOGPATH "/var/log/system.log"
+// #define LOGPATH "/var/log/system.log"
+#define LOGPATH "test.log"
+
+constexpr int FILE_LINE_LEN = 1024;
+long          g_curr_offset = 0;
+
+int32_t c_tail(const char *file)
+{
+    if (!file)
+        return -1;
+    FILE *fp = fopen(file, "rb");
+    if (!fp)
+    {
+        printf("cant open file, file: %s\n", file);
+        return -2;
+    }
+
+    fseek(fp, g_curr_offset, SEEK_SET);
+
+    char     text[FILE_LINE_LEN];
+    uint32_t len;
+    while (!feof(fp))
+    {
+        memset(text, 0x0, FILE_LINE_LEN);
+        fgets(text, FILE_LINE_LEN, fp);
+        len = strlen(text);
+        if (len == 0 || text[len - 1] != '\n')
+            continue;
+        text[len - 1] = 0;
+        g_curr_offset += len;
+        printf("%s\n", text);
+    }
+
+    fclose(fp);
+
+    return 0;
+}
 
 class XAgent::PImpl
 {
@@ -15,7 +51,6 @@ public:
 public:
     XAgent  *owenr_ = nullptr;
     LXMysql *mysql_ = nullptr;
-    FILE    *fp_    = nullptr;
 };
 
 XAgent::PImpl::PImpl(XAgent *owenr) : owenr_(owenr)
@@ -29,11 +64,6 @@ XAgent::XAgent()
 
 XAgent::~XAgent()
 {
-    if (impl_->fp_)
-    {
-        fclose(impl_->fp_);
-    }
-
     delete impl_->mysql_;
 }
 
@@ -54,45 +84,24 @@ auto XAgent::init(const std::string &ip) -> bool
 
 
     /// 读取日志文件
-    impl_->fp_ = fopen(LOGPATH, "rb");
-    if (!impl_->fp_)
+    FILE *fp = fopen(LOGPATH, "rb");
+    if (!fp)
     {
         std::cerr << "open log " << LOGPATH << " failed!" << std::endl;
         return false;
     }
     std::cout << "open log " << LOGPATH << " success!" << std::endl;
     /// 只审计系统开始运行之后事件
+    fclose(fp);
 
-    /// 文件移动到结尾
-    fseek(impl_->fp_, 0, SEEK_END);
     return true;
 }
 
 auto XAgent::main() -> void
 {
-    if (!impl_->fp_)
-    {
-        std::cerr << "XAgent::main failed! log file is not open!" << std::endl;
-        return;
-    }
-
-    /// 读取最新的日志
-    std::string log = "";
     for (;;) /// 无限循环
     {
-        char c = fgetc(impl_->fp_);
-        /// 耗费cpu
-        if (c <= 0) /// 没有字符或者读到结尾
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            continue;
-        }
-        if (c == '\n')
-        {
-            std::cout << log << std::endl;
-            log = "";
-            continue;
-        }
-        log += c;
+        c_tail(LOGPATH);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
