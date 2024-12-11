@@ -16,8 +16,8 @@
 #pragma comment(lib, "iphlpapi.lib")
 #endif
 
-// #define LOGPATH "/var/log/system.log"
-#define LOGPATH "test.log"
+#define LOGPATH "/var/log/system.log"
+// #define LOGPATH "test.log"
 
 constexpr auto FILE_LINE_LEN = 1024;
 long           g_curr_offset = 0;
@@ -148,7 +148,7 @@ auto XAgent::tail(const char *file) -> std::string
 
 auto XAgent::getLocalIp() -> std::string
 {
-    std::string ip;
+    char ip[16] = { 0 };
 #ifndef _WIN32
     ifaddrs *ifadd = 0;
     if (getifaddrs(&ifadd) != 0)
@@ -165,6 +165,8 @@ auto XAgent::getLocalIp() -> std::string
                 /// 转换整形ip为字符串
 
                 void *tmp = &((sockaddr_in *)iter->ifa_addr)->sin_addr;
+                /// const char *
+                /// inet_ntop(int af, const void * restrict src, char * restrict dst, socklen_t size);
                 inet_ntop(AF_INET, tmp, ip, INET_ADDRSTRLEN);
                 break;
             }
