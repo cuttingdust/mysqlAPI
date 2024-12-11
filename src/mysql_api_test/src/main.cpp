@@ -205,18 +205,19 @@ int main(int argc, char *argv[])
     //     }
     // }
 
-    /// 订票模拟(事务) t_tickets(id int,sold int)
-    table_name                 = "t_tickets";
-    const std::string col_sold = "sold";
-    sql                        = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
-                                                                    "`{1}` INT AUTO_INCREMENT,"
-                                                                    "`{2}` INT,"
-                                                                    "PRIMARY KEY(`{1}`))",
-                                             table_name, col_id, col_sold);
-    my.query(sql.c_str());
-
 
     {
+        /// 订票模拟(事务) t_tickets(id int,sold int)
+        table_name                 = "t_tickets";
+        const std::string col_sold = "sold";
+        sql                        = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+                                                                        "`{1}` INT AUTO_INCREMENT,"
+                                                                        "`{2}` INT,"
+                                                                        "PRIMARY KEY(`{1}`))",
+                                                 table_name, col_id, col_sold);
+        my.query(sql.c_str());
+
+
         XDATA data;
         data["sold"] = "0";
         my.insert(data, "t_tickets"); //id=1

@@ -4,7 +4,7 @@ REM 初始化
 mysqld --initialize --console;
 
 REM 登录
-mysql -u root -pHandabao123@;
+mysql -u root -pSystem123@;
 
 REM 展示
 show databases;
