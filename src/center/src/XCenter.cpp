@@ -27,7 +27,25 @@ constexpr auto table_log      = "t_log";
 constexpr auto table_device   = "t_device";
 constexpr auto table_audit    = "t_audit";
 constexpr auto table_user     = "t_user";
-constexpr auto chart          = "gbk";
+
+#ifdef _WIN32
+constexpr auto chart = "gbk";
+#else
+constexpr auto chart = "utf8";
+#endif
+/// 扩展的 trim 函数，去掉空白字符以及 '\r' 和 '\n'
+std::string trim(const std::string &str)
+{
+    auto start = std::find_if_not(str.begin(), str.end(),
+                                  [](unsigned char ch) { return std::isspace(ch) || ch == '\r' || ch == '\n'; });
+
+    auto end = std::find_if_not(str.rbegin(), str.rend(),
+                                [](unsigned char ch) { return std::isspace(ch) || ch == '\r' || ch == '\n'; })
+                       .base();
+
+    return std::string(start, end);
+}
+
 
 class XCenter::PImpl
 {
@@ -294,6 +312,7 @@ auto XCenter::main() -> void
                 /// 正则结果
                 std::smatch match;
                 std::string data = row[2].data;
+                data             = trim(data);
                 /// 匹配正则，返回结果到match
                 bool ret = std::regex_match(data, match, strategy);
                 if (!ret || match.empty())
