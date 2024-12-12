@@ -27,12 +27,8 @@ constexpr auto table_log      = "t_log";
 constexpr auto table_device   = "t_device";
 constexpr auto table_audit    = "t_audit";
 constexpr auto table_user     = "t_user";
+constexpr auto chart          = "gbk";
 
-#ifdef _WIN32
-constexpr auto chart = "gbk";
-#else
-constexpr auto chart = "utf8";
-#endif
 /// 扩展的 trim 函数，去掉空白字符以及 '\r' 和 '\n'
 std::string trim(const std::string &str)
 {
@@ -143,12 +139,12 @@ auto XCenter::install(const std::string &ip) -> bool
 
     {
         /// Dec 11 17:50:19 Mac sshd-session: handabao [priv][60137]: USER_PROCESS: 60140 ttys001
-        const char *login_event = "登录";
+        const char *login_event = "登录成功";
         const char *login_strategy =
                 R"(([A-Za-z]{3} \\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \\[[a-zA-Z0-9]+\\]\\[[0-9]+\\]: USER_PROCESS: [0-9]+ [a-zA-Z0-9_]+)";
 
         /// Dec 12 00:25:28 Mac sshd-session: handabao [priv][61258]: DEAD_PROCESS: 61261 ttys001
-        const char *exit_event = "离开";
+        const char *exit_event = "离开成功";
         const char *exit_strategy =
                 R"(([A-Za-z]{3} \\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \\[[a-zA-Z0-9]+\\]\\[[0-9]+\\]: DEAD_PROCESS: [0-9]+ [a-zA-Z0-9_]+)";
 
@@ -281,7 +277,11 @@ auto XCenter::main() -> void
     {
         if (row[1].data && row[2].data) /// 初始化正则
         {
-            std::string name     = row[1].data;
+#ifndef _WIN32
+            std::string name = row[1].gbkToUtf8();
+#else
+            std::string name = row[1].data;
+#endif
             std::string strategy = row[2].data;
             // std::cout << "name:" << name << " ,strategies:" << strategy << std::endl;
 
@@ -320,7 +320,7 @@ auto XCenter::main() -> void
                     continue;
                 }
                 std::cout << name << std::endl;
-
+                std::cout << "==============" << std::endl;
                 // XDATA d;
                 // /// 审计成功的，事件名称
                 // d[col_name]    = name.c_str();

@@ -12,7 +12,7 @@
 #define XCENTER_H
 
 #include <memory>
-#include <xstring>
+#include <string>
 
 class XCenter
 {
