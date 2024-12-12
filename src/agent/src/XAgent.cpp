@@ -16,8 +16,8 @@
 #pragma comment(lib, "iphlpapi.lib")
 #endif
 
-#define LOGPATH "/var/log/system.log"
-// #define LOGPATH "test.log"
+// #define LOGPATH "/var/log/system.log"
+#define LOGPATH "test.log"
 
 constexpr auto FILE_LINE_LEN = 1024;
 long           g_curr_offset = 0;

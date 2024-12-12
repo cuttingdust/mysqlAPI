@@ -31,7 +31,11 @@ int main(int argc, char *argv[])
         XCenter::get()->install(ip);
         return 0;
     }
-    XCenter::get()->init();
+    if (!XCenter::get()->init())
+    {
+        std::cerr << "XCenter::Get()->Init() failed!" << std::endl;
+        return -1;
+    }
     if (cmd == "add")
     {
         std::cout << "add device" << std::endl;
@@ -46,6 +50,7 @@ int main(int argc, char *argv[])
         XCenter::get()->addDevice(ip, name);
     }
 
+    XCenter::get()->main();
     std::cout << "Center start!\n";
     return 0;
 }

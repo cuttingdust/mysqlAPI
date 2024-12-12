@@ -4,6 +4,7 @@
 #include <LXMysql.h>
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 #define CENTER_CONF "ip"
 
@@ -206,4 +207,44 @@ auto XCenter::addDevice(const std::string &ip, const std::string &name) -> bool
     data[col_ip]   = ip.c_str();
     data[col_name] = name.c_str();
     return impl_->mysql_->insert(data, table_device);
+}
+
+auto XCenter::main() -> void
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "XCenter::main failed! mysql is null!" << std::endl;
+        return;
+    }
+
+    /// 只审计运行之后的事件
+    /// 找到最后一个事件，取到id号
+    int lastid = 0;
+    // auto rows   = impl_->mysql_->getResult("select max(id) from t_log");
+    auto rows = impl_->mysql_->getResult(std::format("SELECT MAX({}) FROM {};", col_id, table_log).c_str());
+    if (rows[0][0].data)
+    {
+        lastid = atoi(rows[0][0].data);
+    }
+    std::cout << "last id is " << lastid << std::endl;
+
+    for (;;)
+    {
+        /// 获取agent存储最新数据
+        std::string sql  = std::format("SELECT * FROM {} WHERE {}>{}", table_log, col_id, lastid);
+        auto        rows = impl_->mysql_->getResult(sql.c_str());
+        if (rows.empty())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        /// 遍历日志列表
+        for (auto row : rows)
+        {
+            lastid = atoi(row[0].data);
+            if (!row[2].data)
+                continue;
+            std::cout << row[2].data << std::endl;
+        }
+    }
 }
