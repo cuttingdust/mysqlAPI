@@ -17,13 +17,15 @@
 class XAgent
 {
 public:
-    XAgent();
-    virtual ~XAgent();
     static XAgent* get()
     {
         static XAgent a;
         return &a;
     }
+
+private:
+    XAgent();
+    virtual ~XAgent();
 
 public:
     auto tail(const char* file) -> std::string;
