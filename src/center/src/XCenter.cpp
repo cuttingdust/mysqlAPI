@@ -19,6 +19,8 @@ constexpr auto col_log        = "log";
 constexpr auto col_time       = "log_time";
 constexpr auto col_context    = "context";
 constexpr auto col_user       = "user";
+constexpr auto col_system     = "login_system";
+constexpr auto col_event_time = "event_time";
 constexpr auto col_pass       = "pass";
 constexpr auto col_device_ip  = "device_ip";
 constexpr auto col_from_ip    = "from_ip";
@@ -207,18 +209,19 @@ auto XCenter::install(const std::string &ip) -> bool
     ///创建审计结果 t_audit
     sql = std::format("DROP TABLE IF EXISTS {};", table_audit);
     impl_->mysql_->query(sql.c_str());
-
     sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
                       "`{1}` INT AUTO_INCREMENT,"
                       "`{2}` VARCHAR(256),"
                       "`{3}` VARCHAR(2048),"
                       "`{4}` VARCHAR(256),"
-                      "`{5}` VARCHAR(16),"
-                      "`{6}` VARCHAR(16),"
-                      "`{7}` INT,"
-                      "`{8}` datetime,PRIMARY KEY(`{1}`));",
-                      table_audit, col_id, col_name, col_context, col_user, col_device_ip, col_from_ip, col_port,
-                      col_last_heart);
+                      "`{5}` VARCHAR(256),"
+                      "`{6}` VARCHAR(256),"
+                      "`{7}` VARCHAR(16),"
+                      "`{8}` VARCHAR(16),"
+                      "`{9}` INT,"
+                      "`{10}` datetime,PRIMARY KEY(`{1}`));",
+                      table_audit, col_id, col_name, col_context, col_user, col_system, col_event_time, col_device_ip,
+                      col_from_ip, col_port, col_last_heart);
     impl_->mysql_->query(sql.c_str());
 
 
@@ -321,20 +324,19 @@ auto XCenter::main() -> void
                 }
                 std::cout << name << std::endl;
                 std::cout << "==============" << std::endl;
-                // XDATA d;
-                // /// 审计成功的，事件名称
-                // d[col_name]    = name.c_str();
-                // d[col_context] = data.c_str();
-                // if (row[1].data)
-                //     d[col_device_ip] = row[1].data;
-                // /// 匹配结果， 下标0 是整个字符串 1是第一个匹配结果
-                // std::string user    = match[1];
-                // std::string from_ip = match[2];
-                // std::string port    = match[3];
-                // d["user"]           = user.c_str();
-                // d["from_ip"]        = from_ip.c_str();
-                // d["port"]           = port.c_str();
-                // my->Insert(d, "t_audit");
+                XDATA d;
+                /// 审计成功的，事件名称
+                d[col_name]    = name.c_str();
+                d[col_context] = data.c_str();
+                if (row[1].data)
+                    d[col_device_ip] = row[1].data;
+                /// 匹配结果， 下标0 是整个字符串 1是第一个匹配结果
+
+                /// Dec 11 17:50:19 Mac sshd-session: handabao [priv][60137]: USER_PROCESS: 60140 ttys001
+                std::string event_time   = match[1];
+                std::string login_system = match[2];
+                std::string user         = match[3];
+                impl_->mysql_->insert(d, table_audit);
             }
         }
     }
