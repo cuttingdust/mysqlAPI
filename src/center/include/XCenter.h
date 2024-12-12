@@ -30,6 +30,7 @@ private:
 public:
     auto init() -> bool;
     auto install(const std::string& ip) -> bool;
+    auto addDevice(const std::string& ip, const std::string& name) -> bool;
 
 private:
     class PImpl;

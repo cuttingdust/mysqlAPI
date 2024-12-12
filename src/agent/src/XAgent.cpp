@@ -22,11 +22,11 @@
 constexpr auto FILE_LINE_LEN = 1024;
 long           g_curr_offset = 0;
 
-constexpr auto tabele_name = "t_log";
-constexpr auto col_id      = "id";
-constexpr auto col_ip      = "ip";
-constexpr auto col_log     = "log";
-constexpr auto col_time    = "log_time";
+constexpr auto table_stratery = "t_log";
+constexpr auto col_id         = "id";
+constexpr auto col_ip         = "ip";
+constexpr auto col_log        = "log";
+constexpr auto col_time       = "log_time";
 
 class XAgent::PImpl
 {
@@ -86,16 +86,6 @@ auto XAgent::init(const std::string &ip) -> bool
 
     /// 只审计系统开始运行之后事件
     fclose(fp);
-
-    /// 创建t_log日志表
-
-    const auto sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
-                                 "`{1}` INT AUTO_INCREMENT,"
-                                 "`{2}` VARCHAR(16),"
-                                 "`{3}` VARCHAR(2048),"
-                                 "`{4}` datetime, PRIMARY KEY(`{1}`))",
-                                 tabele_name, col_id, col_ip, col_log, col_time);
-    impl_->mysql_->query(sql.c_str());
 
     return true;
 }
@@ -270,6 +260,6 @@ auto XAgent::saveLog(const std::string &log) -> bool
     //插入时间，用mysql now（）
     //@表示 字段内容不加引号，@会自动去除
     data[col_time] = "@now()";
-    impl_->mysql_->insert(data, tabele_name);
+    impl_->mysql_->insert(data, table_stratery);
     return true;
 }
