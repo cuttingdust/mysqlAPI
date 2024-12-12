@@ -52,7 +52,11 @@ int main(int argc, char *argv[])
     // /// UNLOCK TABLES;
     // std::cout << "insert one job:" << my.query(sql.c_str()) << std::endl;
     // std::cout << "=================表锁=========================" << std::endl;
+    const char *test_name = R"(([A-Za-z]{3} \\d{1,2} )";
+    sql                   = std::format("insert into {0} (`{1}`) values ('{2}');", table_name, col_name, test_name);
+    my.query(sql.c_str());
 
+    std::cout << sql << std::endl;
     // /// 测试事务
     // my.startTransaction();
     // XDATA kv;
@@ -206,45 +210,45 @@ int main(int argc, char *argv[])
     // }
 
 
-    {
-        /// 订票模拟(事务) t_tickets(id int,sold int)
-        table_name                 = "t_tickets";
-        const std::string col_sold = "sold";
-        sql                        = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
-                                                                        "`{1}` INT AUTO_INCREMENT,"
-                                                                        "`{2}` INT,"
-                                                                        "PRIMARY KEY(`{1}`))",
-                                                 table_name, col_id, col_sold);
-        my.query(sql.c_str());
-
-
-        XDATA data;
-        data["sold"] = "0";
-        my.insert(data, "t_tickets"); //id=1
-        my.startTransaction();
-
-        bool        bIsUpdate  = true;
-        std::string str_update = "";
-        bIsUpdate ? str_update = "for update" : str_update = ""; /// 行锁
-        //行锁
-        sql = std::format("select * from {0} where {1} {2} {3};", table_name, std::format("{}=0", col_sold),
-                          std::format("order by {}", col_id), str_update);
-        // std::cout << sql << std::endl;
-        XROWS       rows = my.getResult(sql.c_str());
-        std::string id   = rows[0][0].data;
-        std::cout << "Buy ticket id is " << id << std::endl;
-
-        /// 模拟冲突
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-        data["sold"] = "1";
-        my.update(data, table_name, std::format("{}={}", col_id, id));
-
-        std::cout << "Buy ticket id  " << id << " success!" << std::endl;
-        sql = std::format("select * from {} where {} {};", table_name, std::format("{}={}", col_sold, 0), str_update);
-        // my.getResult(sql.c_str());
-        my.commit();
-        my.stopTransaction();
-    }
+    // {
+    //     /// 订票模拟(事务) t_tickets(id int,sold int)
+    //     table_name                 = "t_tickets";
+    //     const std::string col_sold = "sold";
+    //     sql                        = std::format("CREATE TABLE IF NOT EXISTS `{0}` ("
+    //                                                                     "`{1}` INT AUTO_INCREMENT,"
+    //                                                                     "`{2}` INT,"
+    //                                                                     "PRIMARY KEY(`{1}`))",
+    //                                              table_name, col_id, col_sold);
+    //     my.query(sql.c_str());
+    //
+    //
+    //     XDATA data;
+    //     data["sold"] = "0";
+    //     my.insert(data, "t_tickets"); //id=1
+    //     my.startTransaction();
+    //
+    //     bool        bIsUpdate  = true;
+    //     std::string str_update = "";
+    //     bIsUpdate ? str_update = "for update" : str_update = ""; /// 行锁
+    //     //行锁
+    //     sql = std::format("select * from {0} where {1} {2} {3};", table_name, std::format("{}=0", col_sold),
+    //                       std::format("order by {}", col_id), str_update);
+    //     // std::cout << sql << std::endl;
+    //     XROWS       rows = my.getResult(sql.c_str());
+    //     std::string id   = rows[0][0].data;
+    //     std::cout << "Buy ticket id is " << id << std::endl;
+    //
+    //     /// 模拟冲突
+    //     std::this_thread::sleep_for(std::chrono::seconds(10));
+    //     data["sold"] = "1";
+    //     my.update(data, table_name, std::format("{}={}", col_id, id));
+    //
+    //     std::cout << "Buy ticket id  " << id << " success!" << std::endl;
+    //     sql = std::format("select * from {} where {} {};", table_name, std::format("{}={}", col_sold, 0), str_update);
+    //     // my.getResult(sql.c_str());
+    //     my.commit();
+    //     my.stopTransaction();
+    // }
 
 
     // my.freeResult();
