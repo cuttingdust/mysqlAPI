@@ -2,6 +2,7 @@
 #include <iostream>
 #include <format>
 #include <chrono>
+#include <regex>
 #include <thread>
 
 int main(int argc, char *argv[])
@@ -52,11 +53,25 @@ int main(int argc, char *argv[])
     // /// UNLOCK TABLES;
     // std::cout << "insert one job:" << my.query(sql.c_str()) << std::endl;
     // std::cout << "=================±íËø=========================" << std::endl;
-    const char *test_name = R"(([A-Za-z]{3} \\d{1,2} )";
-    sql                   = std::format("insert into {0} (`{1}`) values ('{2}');", table_name, col_name, test_name);
-    my.query(sql.c_str());
+    // const char *test_name = R"(([A-Za-z]{3} \\d{1,2} )";
+    // sql                   = std::format("insert into {0} (`{1}`) values ('{2}');", table_name, col_name, test_name);
+    // my.query(sql.c_str());
+    //
+    // std::cout << sql << std::endl;
 
-    std::cout << sql << std::endl;
+    const std::string test_data =
+            R"(Dec 11 17:50:19 Mac sshd-session: handabao [priv][60137]: USER_PROCESS: 60140 ttys001)";
+    const auto pattern =
+            R"(([A-Za-z]{3} \d{1,2} \d{2}:\d{2}:\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \[[a-zA-Z0-9]+\]\[[0-9]+\]: USER_PROCESS: [0-9]+ [a-zA-Z0-9_]+)";
+
+    std::regex  re(pattern);
+    std::smatch match;
+    bool        res = std::regex_match(test_data, match, re);
+    std::cout << match[0] << std::endl;
+    std::cout << match[1] << std::endl;
+    std::cout << match[2] << std::endl;
+    std::cout << match[3] << std::endl;
+    std::cout << match.size() << std::endl;
     // /// ²âÊÔÊÂÎñ
     // my.startTransaction();
     // XDATA kv;

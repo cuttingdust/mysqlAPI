@@ -127,12 +127,12 @@ auto XCenter::install(const std::string &ip) -> bool
         /// Dec 11 17:50:19 Mac sshd-session: handabao [priv][60137]: USER_PROCESS: 60140 ttys001
         const char *login_event = "登录";
         const char *login_strategy =
-                R"(([A-Za-z]{3} \\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \\[[a-zA-Z0-9]+\\]\\[[0-9]+\\]: USER_PROCESS:)";
+                R"(([A-Za-z]{3} \\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \\[[a-zA-Z0-9]+\\]\\[[0-9]+\\]: USER_PROCESS: [0-9]+ [a-zA-Z0-9_]+)";
 
         /// Dec 12 00:25:28 Mac sshd-session: handabao [priv][61258]: DEAD_PROCESS: 61261 ttys001
         const char *exit_event = "离开";
         const char *exit_strategy =
-                R"(([A-Za-z]{3} \\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \\[[a-zA-Z0-9]+\\]\\[[0-9]+\\]: DEAD_PROCESS:)";
+                R"(([A-Za-z]{3} \\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([A-Za-z]+) sshd-session: ([a-zA-Z0-9_]+) \\[[a-zA-Z0-9]+\\]\\[[0-9]+\\]: DEAD_PROCESS: [0-9]+ [a-zA-Z0-9_]+)";
 
         XDATA data;
         data[col_name]     = login_event;
@@ -263,13 +263,16 @@ auto XCenter::main() -> void
     {
         if (row[1].data && row[2].data) /// 初始化正则
         {
-            std::cout << "name:" << row[1].data << " ,strategies:" << row[2].data;
-            strategies[row[1].data] = std::regex(row[2].data);
+            std::string name     = row[1].data;
+            std::string strategy = row[2].data;
+            // std::cout << "name:" << name << " ,strategies:" << strategy << std::endl;
+
+            strategies[name] = std::regex(strategy);
         }
     }
 
 
-    for (;;)
+    for (;;) /// 循环审计
     {
         /// 获取agent存储最新数据
         std::string sql  = std::format("SELECT * FROM {} WHERE {}>{}", table_log, col_id, lastid);
@@ -286,6 +289,34 @@ auto XCenter::main() -> void
             if (!row[2].data)
                 continue;
             std::cout << row[2].data << std::endl;
+            for (const auto &[name, strategy] : strategies)
+            {
+                /// 正则结果
+                std::smatch match;
+                std::string data = row[2].data;
+                /// 匹配正则，返回结果到match
+                bool ret = std::regex_match(data, match, strategy);
+                if (!ret || match.empty())
+                {
+                    continue;
+                }
+                std::cout << name << std::endl;
+
+                // XDATA d;
+                // /// 审计成功的，事件名称
+                // d[col_name]    = name.c_str();
+                // d[col_context] = data.c_str();
+                // if (row[1].data)
+                //     d[col_device_ip] = row[1].data;
+                // /// 匹配结果， 下标0 是整个字符串 1是第一个匹配结果
+                // std::string user    = match[1];
+                // std::string from_ip = match[2];
+                // std::string port    = match[3];
+                // d["user"]           = user.c_str();
+                // d["from_ip"]        = from_ip.c_str();
+                // d["port"]           = port.c_str();
+                // my->Insert(d, "t_audit");
+            }
         }
     }
 }
