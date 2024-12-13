@@ -9,8 +9,13 @@
 #include <termio.h>
 #endif
 
-constexpr auto chart             = "gbk"; /// 数据库字符集
-constexpr auto g_max_login_times = 10;    /// 最大登录失败次数
+constexpr auto table_user = "t_user"; /// 用户表
+constexpr auto col_id     = "id";     /// 用户id
+constexpr auto col_user   = "user";   /// 用户名
+constexpr auto col_pass   = "pass";   /// 密码
+constexpr auto chart      = "gbk";    /// 数据库字符集
+
+constexpr auto g_max_login_times = 10; /// 最大登录失败次数
 
 #ifndef _WIN32
 char _getch()
@@ -86,9 +91,38 @@ auto XClient::login() -> bool
         std::cout << "[" << username << "]" << std::endl;
 
         /// 接收密码输入
+        /// //注入攻击
+        /// 如果你支持运行多条sql语句，结束你的语句，在添加自己的语句（删库）
+        /// 无密码直接登录
+        /// 限制用户的权限，不用root用户
+        /// 用预处理语句stmt
+        /// 检查用户的输入
+        /// select id from t_user where user='root' and pass=md5('123456')
+        /// select id from t_user where user='1'or'1'='1' and pass=md5('1')or'c4ca4238a0b923820dcc509a6f75849b'=md5('1')
+        /// username =  1'or'1'='1
+        /// password = 1')or'c4ca4238a0b923820dcc509a6f75849b'=md5('1
         std::string password;
         std::cout << "input password:" << std::flush;
         password = inputPassword();
+        // std::cout << "[" << password << "]" << std::endl;
+
+        if (!checkInput(username) || !checkInput(password))
+        {
+            std::cout << "Injection attacks" << std::endl;
+            continue;
+        }
+
+        const std::string &sql  = std::format("SELECT `{}` FROM `{}` WHERE `{}`='{}' AND `{}`={};", col_id, table_user,
+                                              col_user, username, col_pass, std::format(R"(MD5("{}"))", password));
+        auto               rows = impl_->mysql_->getResult(sql.c_str());
+        if (!rows.empty())
+        {
+            std::cout << "login success！" << std::endl;
+            is_login = true;
+            break;
+        }
+        std::cout << "login failed！" << std::endl;
+
         std::cout << "[" << password << "]" << std::endl;
     }
     return is_login;
@@ -96,18 +130,26 @@ auto XClient::login() -> bool
 
 auto XClient::inputPassword() -> std::string
 {
-    //清空缓冲
+    /// 清空缓冲
     std::cin.ignore(4096, '\n');
     std::string password = "";
     for (;;)
     {
-        //获取输入字符不显示
+        /// 获取输入字符不显示
         char a = _getch();
         if (a <= 0 || a == '\n' || a == '\r')
             break;
+        if (a == '\b')
+        {
+            std::cout << "-" << std::flush;
+            if (!password.empty())
+                password.pop_back();
+            continue;
+        }
         std::cout << "*" << std::flush;
         password += a;
     }
+    std::cout << std::endl;
     return password;
 }
 
@@ -116,4 +158,19 @@ auto XClient::main() -> void
     /// 用户登录
     if (!login())
         return;
+}
+
+auto XClient::checkInput(const std::string &in) -> bool
+{
+    ///不允许出现的字符
+    std::string str = R"('"())";
+    for (char a : str)
+    {
+        size_t found = in.find(a);
+        if (found != std::string::npos) ///发现违规字符
+        {
+            return false;
+        }
+    }
+    return true;
 }

@@ -15,5 +15,6 @@ int main(int argc, char *argv[])
         return -1;
     }
     XClient::get()->main();
+
     return 0;
 }
