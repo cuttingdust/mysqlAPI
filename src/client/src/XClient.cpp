@@ -63,6 +63,64 @@ std::string trim(const std::string &str)
     return std::string(start, end);
 }
 
+std::vector<int> calculate_column_widths(const XROWS &columns, const XROWS &rows)
+{
+    std::vector<int> widths(columns.size());
+
+    /// 计算列名的最大宽度
+    for (size_t i = 0; i < columns.size(); ++i)
+    {
+        widths[i] = strlen(columns[i][0].data);
+    }
+
+    /// 计算每一行中对应列的数据长度并更新宽度
+    for (const auto &row : rows)
+    {
+        for (size_t i = 0; i < columns.size(); ++i)
+        {
+            widths[i] = std::max(widths[i], static_cast<int>(strlen(row[i].data)));
+        }
+    }
+
+    ///  为每列增加一点额外的空间（如2个字符），使输出更美观
+    for (auto &width : widths)
+    {
+        width += 2; /// 增加空白
+    }
+
+    return widths;
+}
+
+void print_table(const XROWS &columns, const XROWS &rows)
+{
+    /// 动态计算每列的宽度
+    auto column_widths = calculate_column_widths(columns, rows);
+
+    /// 打印表头
+    for (size_t i = 0; i < columns.size(); ++i)
+    {
+        std::cout << std::left << std::setw(column_widths[i]) << trim(columns[i][0].data);
+    }
+    std::cout << std::endl;
+
+    ///  打印分隔线
+    for (const auto &width : column_widths)
+    {
+        std::cout << std::setfill('-') << std::setw(width) << "" << std::setfill(' ');
+    }
+    std::cout << std::endl;
+
+    /// 打印每一行
+    for (const auto &row : rows)
+    {
+        for (size_t i = 0; i < columns.size(); ++i)
+        {
+            std::cout << std::left << std::setw(column_widths[i]) << trim(row[i].data);
+        }
+        std::cout << std::endl;
+    }
+}
+
 
 class XClient::PImpl
 {
@@ -103,27 +161,14 @@ auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
     // std::cout << sql << std::endl;
     auto rows = mysql_->getResult(sql.c_str());
     sql       = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_log);
-    auto columns    = mysql_->getResult(sql.c_str());
-    int  width      = 30;
-    int  long_width = 100;
-    /// 打印表头
-    for (auto col : columns)
+    auto columns = mysql_->getResult(sql.c_str());
+    if (columns.empty() || rows.empty())
     {
-        int w = !strcmp(col[0].data, col_log) ? long_width : width;
-        std::cout << std::left << std::setw(w) << trim(col[0].data);
+        std::cout << "No data" << std::endl;
+        return;
     }
-    std::cout << std::endl;
 
-    /// 遍历每一行
-    for (const auto &row : rows)
-    {
-        for (int i = 0; i < columns.size(); ++i)
-        {
-            int w = !strcmp(columns[i][0].data, col_log) ? long_width : width;
-            std::cout << std::left << std::setw(w) << trim(row[i].data);
-        }
-        std::cout << std::endl;
-    }
+    print_table(columns, rows);
     std::cout << std::format("Page = {} PageCount = {}", page, pagecount) << std::endl;
 }
 
@@ -253,8 +298,8 @@ auto XClient::init(const std::string &ip) -> bool
 auto XClient::main() -> void
 {
     /// 用户登录
-    if (!impl_->login())
-        return;
+    // if (!impl_->login())
+    //     return;
 
     /// 分页显示 t_log
     /// 获取用户
