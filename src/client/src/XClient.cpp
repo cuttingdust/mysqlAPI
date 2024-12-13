@@ -14,27 +14,27 @@
 #include <termios.h>
 #endif
 
-constexpr auto table_user = "t_user"; /// ÓÃ»§±í
-constexpr auto col_id     = "id";     /// ÓÃ»§id
-constexpr auto col_user   = "user";   /// ÓÃ»§Ãû
-constexpr auto col_pass   = "pass";   /// ÃÜÂë
-constexpr auto table_log  = "t_log";  /// ÈÕÖ¾±í
-constexpr auto col_log    = "log";    /// ÈÕÖ¾
-constexpr auto chart      = "gbk";    /// Êý¾Ý¿â×Ö·û¼¯
+constexpr auto table_user = "t_user"; /// ï¿½Ã»ï¿½ï¿½ï¿½
+constexpr auto col_id     = "id";     /// ï¿½Ã»ï¿½id
+constexpr auto col_user   = "user";   /// ï¿½Ã»ï¿½ï¿½ï¿½
+constexpr auto col_pass   = "pass";   /// ï¿½ï¿½ï¿½ï¿½
+constexpr auto table_log  = "t_log";  /// ï¿½ï¿½Ö¾ï¿½ï¿½
+constexpr auto col_log    = "log";    /// ï¿½ï¿½Ö¾
+constexpr auto chart      = "gbk";    /// ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ö·ï¿½ï¿½ï¿½
 
-constexpr auto g_max_login_times = 10; /// ×î´óµÇÂ¼Ê§°Ü´ÎÊý
+constexpr auto g_max_login_times = 10; /// ï¿½ï¿½ï¿½ï¿½Â¼Ê§ï¿½Ü´ï¿½ï¿½ï¿½
 
 #ifndef _WIN32
 char _getch()
 {
     termios new_tm;
-    /// Ô­À´µÄÄ£Ê½
+    /// Ô­ï¿½ï¿½ï¿½ï¿½Ä£Ê½
     termios old_tm;
     int     fd = 0;
     if (tcgetattr(fd, &old_tm) < 0)
         return -1;
 
-    /// ¸ü¸ÄÎªÔ­Ê¼Ä£Ê½£¬Ã»ÓÐ»ØÏÔ
+    /// ï¿½ï¿½ï¿½ï¿½ÎªÔ­Ê¼Ä£Ê½ï¿½ï¿½Ã»ï¿½Ð»ï¿½ï¿½ï¿½
     cfmakeraw(&new_tm);
     if (tcsetattr(fd, TCSANOW, &new_tm) < 0)
     {
@@ -50,7 +50,7 @@ char _getch()
 
 #endif
 
-/// À©Õ¹µÄ trim º¯Êý£¬È¥µô¿Õ°××Ö·ûÒÔ¼° '\r' ºÍ '\n'
+/// ï¿½ï¿½Õ¹ï¿½ï¿½ trim ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½ï¿½Õ°ï¿½ï¿½Ö·ï¿½ï¿½Ô¼ï¿½ '\r' ï¿½ï¿½ '\n'
 std::string trim(const std::string &str)
 {
     auto start = std::find_if_not(str.begin(), str.end(),
@@ -67,13 +67,13 @@ std::vector<int> calculate_column_widths(const XROWS &columns, const XROWS &rows
 {
     std::vector<int> widths(columns.size());
 
-    /// ¼ÆËãÁÐÃûµÄ×î´ó¿í¶È
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     for (size_t i = 0; i < columns.size(); ++i)
     {
         widths[i] = strlen(columns[i][0].data);
     }
 
-    /// ¼ÆËãÃ¿Ò»ÐÐÖÐ¶ÔÓ¦ÁÐµÄÊý¾Ý³¤¶È²¢¸üÐÂ¿í¶È
+    /// ï¿½ï¿½ï¿½ï¿½Ã¿Ò»ï¿½ï¿½ï¿½Ð¶ï¿½Ó¦ï¿½Ðµï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½È²ï¿½ï¿½ï¿½ï¿½Â¿ï¿½ï¿½
     for (const auto &row : rows)
     {
         for (size_t i = 0; i < columns.size(); ++i)
@@ -82,10 +82,10 @@ std::vector<int> calculate_column_widths(const XROWS &columns, const XROWS &rows
         }
     }
 
-    ///  ÎªÃ¿ÁÐÔö¼ÓÒ»µã¶îÍâµÄ¿Õ¼ä£¨Èç2¸ö×Ö·û£©£¬Ê¹Êä³ö¸üÃÀ¹Û
+    ///  ÎªÃ¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Õ¼ä£¨ï¿½ï¿½2ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     for (auto &width : widths)
     {
-        width += 2; /// Ôö¼Ó¿Õ°×
+        width += 2; /// ï¿½ï¿½ï¿½Ó¿Õ°ï¿½
     }
 
     return widths;
@@ -93,32 +93,52 @@ std::vector<int> calculate_column_widths(const XROWS &columns, const XROWS &rows
 
 void print_table(const XROWS &columns, const XROWS &rows)
 {
-    /// ¶¯Ì¬¼ÆËãÃ¿ÁÐµÄ¿í¶È
+    constexpr auto r_separator = '-';
+    constexpr auto c_separator = "|";
+    /// ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ÐµÄ¿ï¿½ï¿½
     auto column_widths = calculate_column_widths(columns, rows);
 
-    /// ´òÓ¡±íÍ·
-    for (size_t i = 0; i < columns.size(); ++i)
+    ///
+    auto printSplit = [&]() -> void
     {
-        std::cout << std::left << std::setw(column_widths[i]) << trim(columns[i][0].data);
-    }
-    std::cout << std::endl;
-
-    ///  ´òÓ¡·Ö¸ôÏß
-    for (const auto &width : column_widths)
-    {
-        std::cout << std::setfill('-') << std::setw(width) << "" << std::setfill(' ');
-    }
-    std::cout << std::endl;
-
-    /// ´òÓ¡Ã¿Ò»ÐÐ
-    for (const auto &row : rows)
-    {
-        for (size_t i = 0; i < columns.size(); ++i)
+        ///  ï¿½ï¿½Ó¡ï¿½Ö¸ï¿½ï¿½ï¿½
+        std::cout << r_separator;
+        for (const auto &width : column_widths)
         {
-            std::cout << std::left << std::setw(column_widths[i]) << trim(row[i].data);
+            std::cout << std::setfill(r_separator) << std::setw(width) << "" << std::setfill(' ') << r_separator;
         }
         std::cout << std::endl;
-    }
+    };
+
+    auto printTableHead = [&]() -> void
+    {
+        printSplit();
+        /// ï¿½ï¿½Ó¡ï¿½ï¿½Í·
+        std::cout << c_separator;
+        for (size_t i = 0; i < columns.size(); ++i)
+        {
+            std::cout << std::left << std::setw(column_widths[i]) << trim(columns[i][0].data) << c_separator;
+        }
+        std::cout << std::endl;
+        printSplit();
+    };
+
+    auto printData = [&]() -> void
+    {
+        /// ï¿½ï¿½Ó¡Ã¿Ò»ï¿½ï¿½
+        for (const auto &row : rows)
+        {
+            for (size_t i = 0; i < columns.size(); ++i)
+            {
+                std::cout << c_separator << std::left << std::setw(column_widths[i]) << trim(row[i].data);
+            }
+            std::cout << c_separator;
+            std::cout << std::endl;
+        }
+    };
+    printTableHead();
+    printData();
+    printSplit();
 }
 
 
@@ -131,7 +151,7 @@ public:
 public:
     auto c_log(const std::vector<std::string> &cmds) -> void;
     auto input() -> std::string;
-    /////////////////////// µÇÂ¼///////////////////
+    /////////////////////// ï¿½ï¿½Â¼///////////////////
     auto checkInput(const std::string &in) -> bool;
     auto inputPassword() -> std::string;
     auto login() -> bool;
@@ -156,12 +176,17 @@ auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
 
     std::cout << "In log" << std::endl;
 
-    /// limit 0,10 ´Ó0¿ªÊ¼È¡Ê®Ìõ
-    std::string sql = std::format("SELECT * FROM {} LIMIT {},{};", table_log, (page - 1) * pagecount, pagecount);
+    /// limit 0,10 ï¿½ï¿½0ï¿½ï¿½Ê¼È¡Ê®ï¿½ï¿½
+    std::string sql = "";
+
+    sql = std::format("SELECT * FROM {} LIMIT {},{};", table_log, (page - 1) * pagecount, pagecount);
     // std::cout << sql << std::endl;
     auto rows = mysql_->getResult(sql.c_str());
-    sql       = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_log);
+
+    mysql_->query(std::format("set names {};", "utf8").c_str());
+    sql = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_log);
     auto columns = mysql_->getResult(sql.c_str());
+    mysql_->query(std::format("set names {};", chart).c_str());
     if (columns.empty() || rows.empty())
     {
         std::cout << "No data" << std::endl;
@@ -192,18 +217,18 @@ auto XClient::PImpl::login() -> bool
     for (int i = 0; i < g_max_login_times; i++)
     {
         std::string username = "";
-        /// ½ÓÊÕÓÃ»§ÊäÈë
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
         std::cout << "input username:" << std::flush;
         std::cin >> username;
         std::cout << "[" << username << "]" << std::endl;
 
-        /// ½ÓÊÕÃÜÂëÊäÈë
-        /// //×¢Èë¹¥»÷
-        /// Èç¹ûÄãÖ§³ÖÔËÐÐ¶àÌõsqlÓï¾ä£¬½áÊøÄãµÄÓï¾ä£¬ÔÚÌí¼Ó×Ô¼ºµÄÓï¾ä£¨É¾¿â£©
-        /// ÎÞÃÜÂëÖ±½ÓµÇÂ¼
-        /// ÏÞÖÆÓÃ»§µÄÈ¨ÏÞ£¬²»ÓÃrootÓÃ»§
-        /// ÓÃÔ¤´¦ÀíÓï¾ästmt
-        /// ¼ì²éÓÃ»§µÄÊäÈë
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        /// //×¢ï¿½ë¹¥ï¿½ï¿½
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½sqlï¿½ï¿½ä£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ä£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ä£¨É¾ï¿½â£©
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Óµï¿½Â¼
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½È¨ï¿½Þ£ï¿½ï¿½ï¿½ï¿½ï¿½rootï¿½Ã»ï¿½
+        /// ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½stmt
+        /// ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         /// select id from t_user where user='root' and pass=md5('123456')
         /// select id from t_user where user='1'or'1'='1' and pass=md5('1')or'c4ca4238a0b923820dcc509a6f75849b'=md5('1')
         /// username =  1'or'1'='1
@@ -224,11 +249,11 @@ auto XClient::PImpl::login() -> bool
         auto               rows = mysql_->getResult(sql.c_str());
         if (!rows.empty())
         {
-            std::cout << "login success£¡" << std::endl;
+            std::cout << "login successï¿½ï¿½" << std::endl;
             is_login = true;
             break;
         }
-        std::cout << "login failed£¡" << std::endl;
+        std::cout << "login failedï¿½ï¿½" << std::endl;
 
         std::cout << "[" << password << "]" << std::endl;
     }
@@ -237,12 +262,12 @@ auto XClient::PImpl::login() -> bool
 
 auto XClient::PImpl::inputPassword() -> std::string
 {
-    /// Çå¿Õ»º³å
+    /// ï¿½ï¿½Õ»ï¿½ï¿½ï¿½
     std::cin.ignore(4096, '\n');
     std::string password = "";
     for (;;)
     {
-        /// »ñÈ¡ÊäÈë×Ö·û²»ÏÔÊ¾
+        /// ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
         char a = _getch();
         if (a <= 0 || a == '\n' || a == '\r')
             break;
@@ -262,12 +287,12 @@ auto XClient::PImpl::inputPassword() -> std::string
 
 auto XClient::PImpl::checkInput(const std::string &in) -> bool
 {
-    ///²»ÔÊÐí³öÏÖµÄ×Ö·û
+    ///ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Ö·ï¿½
     std::string str = R"('"())";
     for (char a : str)
     {
         size_t found = in.find(a);
-        if (found != std::string::npos) ///·¢ÏÖÎ¥¹æ×Ö·û
+        if (found != std::string::npos) ///ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½Ö·ï¿½
         {
             return false;
         }
@@ -297,20 +322,20 @@ auto XClient::init(const std::string &ip) -> bool
 
 auto XClient::main() -> void
 {
-    /// ÓÃ»§µÇÂ¼
+    /// ï¿½Ã»ï¿½ï¿½ï¿½Â¼
     // if (!impl_->login())
     //     return;
 
-    /// ·ÖÒ³ÏÔÊ¾ t_log
-    /// »ñÈ¡ÓÃ»§
-    /// µÄÊäÈë
+    /// ï¿½ï¿½Ò³ï¿½ï¿½Ê¾ t_log
+    /// ï¿½ï¿½È¡ï¿½Ã»ï¿½
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     for (;;)
     {
         std::cout << "Input:" << std::flush;
         std::string cmd = impl_->input();
         std::cout << cmd << std::endl;
-        /// log 1 10 µÚÒ»Ò³ Ò»Ò³Ê®ÐÐ
-        /// ÇÐ¸î¿Õ¸ñ
+        /// log 1 10 ï¿½ï¿½Ò»Ò³ Ò»Ò³Ê®ï¿½ï¿½
+        /// ï¿½Ð¸ï¿½Õ¸ï¿½
         std::vector<std::string> cmds;
         char                    *p = strtok(const_cast<char *>(cmd.c_str()), " ");
         while (p)
@@ -325,6 +350,10 @@ auto XClient::main() -> void
         if (type == "log")
         {
             impl_->c_log(cmds);
+        }
+        else if (type == "exit")
+        {
+            break;
         }
     }
 }
