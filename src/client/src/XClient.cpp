@@ -11,7 +11,7 @@
 #ifdef _WIN32
 #include <conio.h>
 #else
-#include <termio.h>
+#include <termios.h>
 #endif
 
 constexpr auto table_user = "t_user"; /// ”√ªß±Ì
