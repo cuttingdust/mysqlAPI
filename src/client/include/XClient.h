@@ -33,11 +33,6 @@ public:
     auto main() -> void;
 
 private:
-    auto login() -> bool;
-    auto inputPassword() -> std::string;
-    auto checkInput(const std::string& in) -> bool;
-
-private:
     class PImpl;
     std::unique_ptr<PImpl> impl_;
 };
