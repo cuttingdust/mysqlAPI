@@ -14,5 +14,6 @@ int main(int argc, char *argv[])
         std::cout << "Client init failed!\n";
         return -1;
     }
+    XClient::get()->main();
     return 0;
 }

@@ -30,6 +30,11 @@ private:
 
 public:
     auto init(const std::string& ip) -> bool;
+    auto main() -> void;
+
+private:
+    auto login() -> bool;
+    auto inputPassword() -> std::string;
 
 private:
     class PImpl;
