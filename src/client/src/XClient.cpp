@@ -201,7 +201,7 @@ auto XClient::PImpl::inputPassword() -> std::string
         char a = _getch();
         if (a <= 0 || a == '\n' || a == '\r')
             break;
-        if (a == '\b')
+        if (a == '\b' || a == '\x7F')
         {
             std::cout << "-" << std::flush;
             if (!password.empty())
