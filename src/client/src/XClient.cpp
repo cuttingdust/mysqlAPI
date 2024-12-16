@@ -51,6 +51,25 @@ char _getch()
 
 #endif
 
+bool containsChinese(const std::string &str)
+{
+    // 每个中文字符在 UTF-8 中占用 3 个字节
+    for (size_t i = 0; i < str.length(); ++i)
+    {
+        if ((unsigned char)str[i] >= 0xE0)
+        {                               // 检测 UTF-8 的第一个字节
+            if (i + 2 < str.length() && // 确保有足够的字节
+                (unsigned char)str[i + 1] >= 0x80 && (unsigned char)str[i + 2] >= 0x80)
+            {
+                return true; // 如果满足 UTF-8 结构，返回 true
+            }
+            i += 2; // 跳过这三个字节
+        }
+    }
+    return false;
+}
+
+
 std::string trim(const std::string &str)
 {
     auto start = std::find_if_not(str.begin(), str.end(),
@@ -80,7 +99,18 @@ std::vector<int> calculate_column_widths(const std::vector<std::string> &columns
         {
             if (row[i].data)
             {
+#ifndef _WIN32
+                if (containsChinese(row[i].data))
+                {
+                    widths[i] = std::max(widths[i], static_cast<int>(strlen(row[i].data) / 2));
+                }
+                else
+                {
+                    widths[i] = std::max(widths[i], static_cast<int>(strlen(row[i].data)));
+                }
+#else
                 widths[i] = std::max(widths[i], static_cast<int>(strlen(row[i].data)));
+#endif
             }
         }
     }
