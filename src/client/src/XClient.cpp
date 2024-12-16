@@ -1,6 +1,7 @@
 #include "XClient.h"
 
 #include <algorithm>
+#include <chrono>
 #include <LXMysql.h>
 
 #include <format>
@@ -14,14 +15,27 @@
 #include <termios.h>
 #endif
 
-constexpr auto table_user  = "t_user";  /// 用户表
-constexpr auto col_id      = "id";      /// 用户id
-constexpr auto col_user    = "user";    /// 用户名
-constexpr auto col_pass    = "pass";    /// 用户密码
-constexpr auto table_log   = "t_log";   /// 日志表
-constexpr auto col_log     = "log";     /// 日志
-constexpr auto table_audit = "t_audit"; /// 审计表
-constexpr auto chart       = "gbk";     /// 字符
+constexpr auto col_id         = "id";
+constexpr auto col_name       = "name";
+constexpr auto col_ip         = "ip";
+constexpr auto col_port       = "port";
+constexpr auto col_last_heart = "last_heart";
+constexpr auto col_strategy   = "strategy";
+constexpr auto col_log        = "log";
+constexpr auto col_time       = "log_time";
+constexpr auto col_context    = "context";
+constexpr auto col_user       = "user";
+constexpr auto col_system     = "login_system";
+constexpr auto col_event_time = "event_time";
+constexpr auto col_pass       = "pass";
+constexpr auto col_device_ip  = "device_ip";
+constexpr auto col_from_ip    = "from_ip";
+constexpr auto table_stratery = "t_strategy";
+constexpr auto table_log      = "t_log";
+constexpr auto table_device   = "t_device";
+constexpr auto table_audit    = "t_audit";
+constexpr auto table_user     = "t_user";
+constexpr auto chart          = "gbk";
 
 constexpr auto g_max_login_times = 10; /// 用户输入的最大次数
 
@@ -196,6 +210,10 @@ public:
     ~PImpl() = default;
 
 public:
+    void c_search(const std::vector<std::string> &cmds);
+    ////////////////////////////////////////////////////////
+    auto c_test(const std::vector<std::string> &cmds) -> void;
+    ////////////////////////////////////////////////////////
     auto c_audit(const std::vector<std::string> &cmds) -> void;
     ////////////////////////////////////////////////////////
     auto c_log(const std::vector<std::string> &cmds) -> void;
@@ -214,13 +232,86 @@ XClient::PImpl::PImpl(XClient *owenr) : owenr_(owenr)
 {
 }
 
+void XClient::PImpl::c_search(const std::vector<std::string> &cmds)
+{
+    if (cmds.size() < 2)
+        return;
+
+    const auto &table_name = table_log;
+    std::string ip         = cmds[1];
+    if (ip.empty())
+        return;
+
+    /// 记录查询时间
+    ///
+    /// 记录开始时间
+    auto start = std::chrono::high_resolution_clock::now();
+    // auto rows  = mysql_->getRows(table_name, "*", { col_ip, ip });
+    /// *** 索引探讨
+    /// ??? 新版本有索引的反而查询没有没有索引的快 但是奇怪的是查询行数变少了
+    /// 真是奇怪 单条数据搜寻的时候就特别快 多重 尤其查找的那个数据 占大头的时候就会变慢
+    mysql_->getResult(std::format("SELECT * FROM {} WHERE `{}`='{}';", table_name, col_ip, ip).c_str());
+
+    /// 记录结束时间 -得出耗时
+    auto end      = std::chrono::high_resolution_clock::now();
+    auto duration = duration_cast<std::chrono::microseconds>(end - start); ///微秒
+    std::cout << "time  sec ="
+              << static_cast<double>(duration.count()) * std::chrono::microseconds::period::num /
+                    std::chrono::microseconds::period::den
+              << " sec" << std::endl;
+
+    /// 统计总数
+    int total = mysql_->getCount(table_name, { col_ip, ip });
+    std::cout << "total :" << total << std::endl;
+}
+
+///  test 10000 插入一万条测试数据
+auto XClient::PImpl::c_test(const std::vector<std::string> &cmds) -> void
+{
+    const auto &table_name = table_log;
+
+    /// SELECT mock_data() $$-- 执行此函数 生成一百万条数据
+
+    int count = 10000;
+    if (cmds.size() > 1)
+        count = atoi(cmds[1].c_str());
+    std::cout << "...";
+    mysql_->startTransaction();
+    for (int i = 0; i < count; i++)
+    {
+        XDATA             data;
+        std::stringstream ss;
+        ss << "testlog";
+        ss << (i + 1);
+        std::string tmp = ss.str();
+        data[col_log]   = tmp.c_str();
+        data[col_ip]    = "127.0.0.1";
+        data[col_time]  = "@now()";
+        mysql_->insert(data, table_name);
+    }
+
+    {
+        XDATA             data;
+        std::stringstream ss;
+        ss << "search011";
+        std::string tmp = ss.str();
+        data[col_log]   = tmp.c_str();
+        data[col_ip]    = "11.0.0.1";
+        data[col_time]  = "@now()";
+        mysql_->insert(data, table_name);
+    }
+    mysql_->commit();
+    mysql_->stopTransaction();
+    std::cout << std::endl;
+}
+
 auto XClient::PImpl::c_audit(const std::vector<std::string> &cmds) -> void
 {
     const auto &table_name = table_audit;
     std::cout << "In " << table_name << ":" << std::endl;
     int         total   = mysql_->getCount(table_name);
     const auto &columns = mysql_->getColumns(table_name);
-    const auto &rows    = mysql_->getRows(table_name, "*", { 0, 10 });
+    const auto &rows    = mysql_->getRows(table_name, "*", {}, { 0, 10 });
     if (rows.empty() || columns.empty())
     {
         std::cout << "No data" << std::endl;
@@ -250,7 +341,7 @@ auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
     std::cout << "In " << table_name << ":" << std::endl;
 
     const auto &columns = mysql_->getColumns(table_name);
-    const auto &rows    = mysql_->getRows(table_name, "*", { start, end });
+    const auto &rows    = mysql_->getRows(table_name, "*", {}, { start, end });
     if (rows.empty() || columns.empty())
     {
         std::cout << "No data" << std::endl;
@@ -415,6 +506,14 @@ auto XClient::main() -> void
         else if (type == "audit")
         {
             impl_->c_audit(cmds);
+        }
+        else if (type == "test")
+        {
+            impl_->c_test(cmds);
+        }
+        else if (type == "search")
+        {
+            impl_->c_search(cmds);
         }
         else if (type == "exit")
         {

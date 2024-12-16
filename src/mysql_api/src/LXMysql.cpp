@@ -800,13 +800,20 @@ auto LXMysql::getColumns(const char *table_name) -> XCOLUMNS
     return xcolumns;
 }
 
-auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<int, int> limit) -> XROWS
+auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<std::string, std::string> where,
+                      std::pair<int, int> limit) -> XROWS
 {
     XROWS rows;
     if (!table_name || !selectCol)
         return rows;
 
     std::string sql   = std::format("SELECT {} FROM {}", selectCol, table_name);
+    auto [key, value] = where;
+    if (!key.empty() && !value.empty())
+    {
+        sql += std::format(" WHERE `{}`='{}'", key, value);
+    }
+
     auto [start, end] = limit;
     if (start >= 0 && end > 0)
     {
@@ -819,13 +826,18 @@ auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<i
     return getResult(sql.c_str());
 }
 
-auto LXMysql::getCount(const char *table_name) -> int
+auto LXMysql::getCount(const char *table_name, std::pair<std::string, std::string> where) -> int
 {
     if (!table_name)
         return -1;
 
-    std::string sql  = std::format("SELECT COUNT(*) FROM {}", table_name);
-    auto        rows = getResult(sql.c_str());
+    std::string sql   = std::format("SELECT COUNT(*) FROM {}", table_name);
+    auto [key, value] = where;
+    if (!key.empty() && !value.empty())
+    {
+        sql += std::format(" WHERE `{}`='{}'", key, value);
+    }
+    auto rows = getResult(sql.c_str());
     if (rows.empty() || !rows[0][0].data)
         return -1;
     return atoi(rows[0][0].data);
