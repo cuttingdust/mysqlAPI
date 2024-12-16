@@ -210,6 +210,8 @@ public:
     ~PImpl() = default;
 
 public:
+    auto c_like(const std::vector<std::string> &cmds) -> void;
+    ///////////////////////////////////////////////////////
     void c_search(const std::vector<std::string> &cmds);
     ////////////////////////////////////////////////////////
     auto c_test(const std::vector<std::string> &cmds) -> void;
@@ -230,6 +232,53 @@ public:
 
 XClient::PImpl::PImpl(XClient *owenr) : owenr_(owenr)
 {
+}
+
+auto XClient::PImpl::c_like(const std::vector<std::string> &cmds) -> void
+{
+    if (cmds.size() < 2)
+        return;
+    const auto &table_name = table_log;
+    std::string key        = cmds[1];
+    if (key.empty())
+        return;
+
+
+    /// 记录开始时间
+    auto        start = std::chrono::high_resolution_clock::now();
+    std::string sql   = "";
+    sql               = std::format("select * from {} where `{}` like '%{}%';", table_name, col_log, key);
+
+
+    /// 一百万数据 无索引 0.47秒 有索引 0.000687
+    auto rows = mysql_->getResult(sql.c_str());
+    /// 遍历每一行
+    for (auto row : rows)
+    {
+        ///遍历每一列
+        for (auto c : row)
+        {
+            if (c.data)
+                std::cout << c.data << " " << std::flush;
+        }
+        std::cout << std::endl;
+    }
+
+    /// 记录结束时间 -得出耗时
+    auto end      = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start); ///微秒
+    std::cout << "time  sec ="
+              << static_cast<double>(duration.count()) * std::chrono::microseconds::period::num /
+                    std::chrono::microseconds::period::den
+              << " sec" << std::endl;
+
+    //统计总数
+    sql       = std::format("select count(*) from {} where `{}` like '%{}%';", table_name, col_log, key);
+    rows      = mysql_->getResult(sql.c_str());
+    int total = 0;
+    if (rows.size() > 0 && rows[0][0].data)
+        total = atoi(rows[0][0].data);
+    std::cout << "total :" << total << std::endl;
 }
 
 void XClient::PImpl::c_search(const std::vector<std::string> &cmds)
@@ -514,6 +563,10 @@ auto XClient::main() -> void
         else if (type == "search")
         {
             impl_->c_search(cmds);
+        }
+        else if (type == "like")
+        {
+            impl_->c_like(cmds);
         }
         else if (type == "exit")
         {
