@@ -780,3 +780,41 @@ auto LXMysql::getResult(const char *sql) -> XROWS
     }
     return rows;
 }
+
+auto LXMysql::getColumns(const char *table_name) -> XCOLUMNS
+{
+    freeResult();
+
+    XCOLUMNS xcolumns;
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql getResult failed! msyql is not init!!!" << std::endl;
+        return xcolumns;
+    }
+    const std::string &sql  = std::format("SHOW COLUMNS FROM {};", table_name);
+    auto               rows = getResult(sql.c_str());
+    for (auto row : rows)
+    {
+        xcolumns.emplace_back(row[0].data);
+    }
+    return xcolumns;
+}
+
+auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<int, int> limit) -> XROWS
+{
+    XROWS rows;
+    if (!table_name || !selectCol)
+        return rows;
+
+    std::string sql   = std::format("SELECT {} FROM {}", selectCol, table_name);
+    auto [start, end] = limit;
+    if (start > 0 && end > 0)
+    {
+        const auto str_start = std::to_string(start);
+        const auto str_end   = std::to_string(end);
+
+        sql += std::format(" LIMIT {}, {};", str_start, str_end);
+    }
+
+    return getResult(sql.c_str());
+}

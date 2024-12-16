@@ -63,14 +63,14 @@ std::string trim(const std::string &str)
     return std::string(start, end);
 }
 
-std::vector<int> calculate_column_widths(const XROWS &columns, const XROWS &rows)
+std::vector<int> calculate_column_widths(const std::vector<std::string> &columns, const XROWS &rows)
 {
     std::vector<int> widths(columns.size());
 
     /// 计算列名的最大宽度
     for (size_t i = 0; i < columns.size(); ++i)
     {
-        widths[i] = strlen(columns[i][0].data);
+        widths[i] = columns[i].size();
     }
 
     /// 计算每一行中对应列的数据长度并更新宽度
@@ -102,7 +102,7 @@ std::string center(const std::string &str, int width)
     return std::string(pad_left, ' ') + str + std::string(pad_right, ' ');
 }
 
-void print_table(const XROWS &columns, const XROWS &rows)
+void print_table(const XCOLUMNS &columns, const XROWS &rows)
 {
     constexpr auto r_separator = '-';
     constexpr auto c_separator = "|";
@@ -128,7 +128,7 @@ void print_table(const XROWS &columns, const XROWS &rows)
         std::cout << c_separator;
         for (size_t i = 0; i < columns.size(); ++i)
         {
-            std::cout << std::left << std::setw(column_widths[i]) << trim(columns[i][0].data) << c_separator;
+            std::cout << std::left << std::setw(column_widths[i]) << trim(columns[i]) << c_separator;
         }
         std::cout << std::endl;
         printSplit();
@@ -191,18 +191,18 @@ auto XClient::PImpl::c_audit(const std::vector<std::string> &cmds) -> void
     }
     int total = rows[0][0].data ? atoi(rows[0][0].data) : 0;
 
-    sql  = std::format("SELECT * FROM {};", table_audit);
-    rows = mysql_->getResult(sql.c_str());
-    mysql_->query(std::format("set names {};", "utf8").c_str());
-    sql = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_audit);
-    auto columns = mysql_->getResult(sql.c_str());
-    mysql_->query(std::format("set names {};", chart).c_str());
-    if (columns.empty() || rows.empty())
-    {
-        std::cout << "No data" << std::endl;
-        return;
-    }
-    print_table(columns, rows);
+    // sql  = std::format("SELECT * FROM {};", table_audit);
+    // rows = mysql_->getResult(sql.c_str());
+    // mysql_->query(std::format("set names {};", "utf8").c_str());
+    // sql = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_audit);
+    // auto columns = mysql_->getResult(sql.c_str());
+    // mysql_->query(std::format("set names {};", chart).c_str());
+    // if (columns.empty() || rows.empty())
+    // {
+    //     std::cout << "No data" << std::endl;
+    //     return;
+    // }
+    // print_table(columns, rows);
 }
 
 auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
@@ -219,26 +219,16 @@ auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
         std::cout << "page or pagecount error" << std::endl;
         return;
     }
+    const auto &table_name = table_log;
+    std::cout << "In " << table_name << ":" << std::endl;
 
-    std::cout << "In log" << std::endl;
-
-    /// limit 0,10 从0开始取十条
-    std::string sql = "";
-
-    sql = std::format("SELECT * FROM {} LIMIT {},{};", table_log, (page - 1) * pagecount, pagecount);
-    // std::cout << sql << std::endl;
-    auto rows = mysql_->getResult(sql.c_str());
-
-    mysql_->query(std::format("set names {};", "utf8").c_str());
-    sql = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_log);
-    auto columns = mysql_->getResult(sql.c_str());
-    mysql_->query(std::format("set names {};", chart).c_str());
-    if (columns.empty() || rows.empty())
+    const auto &columns = mysql_->getColumns(table_name);
+    const auto &rows    = mysql_->getRows(table_name, "*", { (page - 1) * pagecount, pagecount });
+    if (rows.empty() || columns.empty())
     {
         std::cout << "No data" << std::endl;
         return;
     }
-
     print_table(columns, rows);
     std::cout << std::format("Page = {} PageCount = {}", page, pagecount) << std::endl;
 }
@@ -378,7 +368,6 @@ auto XClient::main() -> void
     {
         std::cout << "Input:" << std::flush;
         std::string cmd = impl_->input();
-        std::cout << cmd << std::endl;
         /// log 1 10 第一页 一页十行
         /// 切割空格
         std::vector<std::string> cmds;

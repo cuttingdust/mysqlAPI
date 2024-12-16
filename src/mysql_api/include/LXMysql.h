@@ -76,8 +76,9 @@ public:
     auto         drop() -> void;
 };
 
-using XDATA = std::map<std::string, LXData>;
-using XROWS = std::vector<std::vector<LXData>>;
+using XDATA    = std::map<std::string, LXData>;
+using XROWS    = std::vector<std::vector<LXData>>;
+using XCOLUMNS = std::vector<std::string>;
 
 class LXM_EXPORT LXMysql
 {
@@ -244,6 +245,18 @@ public:
     /// \brief 简易接口,返回select的数据结果，每次调用清理上一次的结果集
     /// \return
     auto getResult(const char *sql) -> XROWS;
+
+    /// \brief获取表的字段
+    /// \param table_name
+    /// \return
+    auto getColumns(const char *table_name) -> XCOLUMNS;
+
+    /// \brief 获取条件数据
+    /// \param table_name
+    /// \param selectCol
+    /// \param limit
+    /// \return
+    auto getRows(const char *table_name, const char *selectCol, std::pair<int, int> limit = { 0, 0 }) -> XROWS;
 
 private:
     class PImpl;
