@@ -78,7 +78,10 @@ std::vector<int> calculate_column_widths(const std::vector<std::string> &columns
     {
         for (size_t i = 0; i < columns.size(); ++i)
         {
-            widths[i] = std::max(widths[i], static_cast<int>(strlen(row[i].data)));
+            if (row[i].data)
+            {
+                widths[i] = std::max(widths[i], static_cast<int>(strlen(row[i].data)));
+            }
         }
     }
 
@@ -141,7 +144,10 @@ void print_table(const XCOLUMNS &columns, const XROWS &rows)
         {
             for (size_t i = 0; i < columns.size(); ++i)
             {
-                std::cout << c_separator << std::left << std::setw(column_widths[i]) << trim(row[i].data);
+                if (row[i].data)
+                    std::cout << c_separator << std::left << std::setw(column_widths[i]) << trim(row[i].data);
+                else
+                    std::cout << c_separator << std::left << std::setw(column_widths[i]) << "NULL";
             }
             std::cout << c_separator;
             std::cout << std::endl;
@@ -180,29 +186,18 @@ XClient::PImpl::PImpl(XClient *owenr) : owenr_(owenr)
 
 auto XClient::PImpl::c_audit(const std::vector<std::string> &cmds) -> void
 {
-    std::cout << "In audit" << std::endl;
-    std::string sql = "";
-    sql             = std::format("SELECT COUNT(*) FROM {};", table_audit);
-    auto rows       = mysql_->getResult(sql.c_str());
-    if (rows.empty() || !rows[0][0].data)
+    const auto &table_name = table_audit;
+    std::cout << "In " << table_name << ":" << std::endl;
+    int         total   = mysql_->getCount(table_name);
+    const auto &columns = mysql_->getColumns(table_name);
+    const auto &rows    = mysql_->getRows(table_name, "*", { 0, 10 });
+    if (rows.empty() || columns.empty())
     {
         std::cout << "No data" << std::endl;
         return;
     }
-    int total = rows[0][0].data ? atoi(rows[0][0].data) : 0;
-
-    // sql  = std::format("SELECT * FROM {};", table_audit);
-    // rows = mysql_->getResult(sql.c_str());
-    // mysql_->query(std::format("set names {};", "utf8").c_str());
-    // sql = std::format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{}';", table_audit);
-    // auto columns = mysql_->getResult(sql.c_str());
-    // mysql_->query(std::format("set names {};", chart).c_str());
-    // if (columns.empty() || rows.empty())
-    // {
-    //     std::cout << "No data" << std::endl;
-    //     return;
-    // }
-    // print_table(columns, rows);
+    print_table(columns, rows);
+    std::cout << "Total = " << total << std::endl;
 }
 
 auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
@@ -220,10 +215,12 @@ auto XClient::PImpl::c_log(const std::vector<std::string> &cmds) -> void
         return;
     }
     const auto &table_name = table_log;
+    int         start      = (page - 1) * pagecount;
+    int         end        = pagecount;
     std::cout << "In " << table_name << ":" << std::endl;
 
     const auto &columns = mysql_->getColumns(table_name);
-    const auto &rows    = mysql_->getRows(table_name, "*", { (page - 1) * pagecount, pagecount });
+    const auto &rows    = mysql_->getRows(table_name, "*", { start, end });
     if (rows.empty() || columns.empty())
     {
         std::cout << "No data" << std::endl;
