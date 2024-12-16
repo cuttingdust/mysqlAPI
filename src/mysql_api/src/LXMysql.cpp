@@ -808,7 +808,7 @@ auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<i
 
     std::string sql   = std::format("SELECT {} FROM {}", selectCol, table_name);
     auto [start, end] = limit;
-    if (start > 0 && end > 0)
+    if (start >= 0 && end > 0)
     {
         const auto str_start = std::to_string(start);
         const auto str_end   = std::to_string(end);
