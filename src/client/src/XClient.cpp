@@ -525,8 +525,8 @@ auto XClient::init(const std::string &ip) -> bool
 auto XClient::main() -> void
 {
     /// 用户登录
-    // if (!impl_->login())
-    //     return;
+    if (!impl_->login())
+        return;
 
     /// 分页显示 t_log
     /// 获取用户的输入
