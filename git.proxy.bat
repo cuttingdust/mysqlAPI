@@ -26,7 +26,7 @@ if /i "%~1"=="on" (
     git config --global http.proxy %proxy_url%
     git config --global https.proxy %proxy_url%
     echo Git 代理已开启: %proxy_url%
-) else if /i "%~2"=="global" (
+) else if /i "%~2"=="off" (
     echo 关闭 Git 仓库的global代理...
     git config --global --unset http.proxy
     git config --global --unset https.proxy
