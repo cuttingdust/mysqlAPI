@@ -258,6 +258,11 @@ public:
     /// \return
     auto getRows(const char *table_name, const char *selectCol, std::pair<int, int> limit = { 0, 0 }) -> XROWS;
 
+    /// \brief 统计数据
+    /// \param table_name
+    /// \return
+    auto getCount(const char *table_name) -> int;
+
 private:
     class PImpl;
     std::unique_ptr<PImpl> impl_;

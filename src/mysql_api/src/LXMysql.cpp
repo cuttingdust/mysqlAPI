@@ -818,3 +818,15 @@ auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<i
 
     return getResult(sql.c_str());
 }
+
+auto LXMysql::getCount(const char *table_name) -> int
+{
+    if (!table_name)
+        return -1;
+
+    std::string sql  = std::format("SELECT COUNT(*) FROM {}", table_name);
+    auto        rows = getResult(sql.c_str());
+    if (rows.empty() || !rows[0][0].data)
+        return -1;
+    return atoi(rows[0][0].data);
+}
