@@ -29,7 +29,6 @@ set(CMAKE_AUTORCC OFF)
 # set(AUTORCC_EXECUTABLE "$ENV{QTDIR}/bin/rcc.exe")
 
 ############ 查找 vcpkg 安装的库################
-
 # OpenMP
 find_package(OpenMP)
 message("OpenMP_FOUND = ${OpenMP_FOUND}")
@@ -76,6 +75,8 @@ add_subdirectory(test_gbk_utf8)
 add_subdirectory(agent)
 add_subdirectory(center)
 add_subdirectory(client)
+add_subdirectory(mysql_pool_test)
+
 
 # 拷贝asset目录到输出目录
 set(ASSET_PATH ${CMAKE_CURRENT_SOURCE_DIR}/asset)

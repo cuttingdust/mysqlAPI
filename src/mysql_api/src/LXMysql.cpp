@@ -1,55 +1,14 @@
-#include "LXMysql.h"
+ï»¿#include "LXMysql.h"
+#include "LXMysql_Defines.h"
+#include "LXMysqlTool.h"
 
 #include <format>
 #include <mysql.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <iconv.h>
-#endif
 
-//////////////////////////////////¹¤¾ßº¯Êı///////////////////////////////////
-auto join(const std::vector<std::string> &strings, const std::string &delimiter) -> std::string
-{
-    std::ostringstream oss;
-
-    for (size_t i = 0; i < strings.size(); ++i)
-    {
-        oss << strings[i];
-        if (i < strings.size() - 1)
-        { /// ÔÚÔªËØÖ®¼äÌí¼Ó·Ö¸ô·û
-            oss << delimiter;
-        }
-    }
-
-    return oss.str(); /// ·µ»ØÁ¬½ÓºóµÄ×Ö·û´®
-}
-
-#ifndef _WIN32
-static size_t convert(char *from_cha, char *to_cha, char *in, size_t inlen, char *out, size_t outlen)
-{
-    /// ×ª»»ÉÏÏÂÎÄ
-    iconv_t cd;
-    cd = iconv_open(to_cha, from_cha);
-    if (cd == 0)
-        return -1;
-    memset(out, 0, outlen);
-    char **pin  = &in;
-    char **pout = &out;
-    // std::cout << "in = " << in << std::endl;
-    // std::cout << "inlen = " << inlen << std::endl;
-    // std::cout << "outlen = " << outlen << std::endl;
-    //·µ»Ø×ª»»×Ö½ÚÊıµÄÊıÁ¿£¬µ«ÊÇ×ªGBKÊ±¾­³£²»ÕıÈ· >=0¾Í³É¹¦
-    size_t re = iconv(cd, pin, &inlen, pout, &outlen);
-    iconv_close(cd);
-    // std::cout << "result = " << (int)result << std::endl;
-    return re;
-}
-#endif
-/////////////////////////////////////////////////////////////////////////////
+constexpr auto unique_describe = "unique_describe";
 
 class LXMysql::PImpl
 {
@@ -61,6 +20,8 @@ public:
     LXMysql   *owenr_  = nullptr;
     MYSQL     *mysql_  = nullptr;
     MYSQL_RES *result_ = nullptr;
+
+    clock_t alive_time_;
 };
 
 LXMysql::PImpl::PImpl(LXMysql *owenr) : owenr_(owenr)
@@ -108,7 +69,7 @@ auto LXData::loadFile(const char *fileName) -> bool
         std::cerr << "LoadFile " << fileName << " failed!" << std::endl;
         return false;
     }
-    /// ÎÄ¼ş´óĞ¡
+    /// æ–‡ä»¶å¤§å°
     in.seekg(0, std::ios::end);
     size = in.tellg();
     in.seekg(0, std::ios::beg);
@@ -153,15 +114,15 @@ auto LXData::gbkToUtf8() const -> std::string
 {
     std::string result = "";
 #ifdef _WIN32
-    /// GBK×ªunicode
+    /// GBKè½¬unicode
 
-    /// 1.1 Í³¼Æ×ª»»ºó×Ö½ÚÊı
-    int len = MultiByteToWideChar(CP_ACP, /// ×ª»»µÄ¸ñÊ½
-                                  0,      /// Ä¬ÈÏµÄ×ª»»·½Ê½
-                                  data,   /// ÊäÈëµÄ×Ö½Ú
-                                  -1,     /// ÊäÈëµÄ×Ö·û´®´óĞ¡ -1 ÕÒ\0
-                                  0,      /// Êä³ö
-                                  0       /// Êä³öµÄ¿Õ¼ä´óĞ¡
+    /// 1.1 ç»Ÿè®¡è½¬æ¢åå­—èŠ‚æ•°
+    int len = MultiByteToWideChar(CP_ACP, /// è½¬æ¢çš„æ ¼å¼
+                                  0,      /// é»˜è®¤çš„è½¬æ¢æ–¹å¼
+                                  data,   /// è¾“å…¥çš„å­—èŠ‚
+                                  -1,     /// è¾“å…¥çš„å­—ç¬¦ä¸²å¤§å° -1 æ‰¾\0
+                                  0,      /// è¾“å‡º
+                                  0       /// è¾“å‡ºçš„ç©ºé—´å¤§å°
     );
     if (len <= 0)
         return result;
@@ -169,10 +130,10 @@ auto LXData::gbkToUtf8() const -> std::string
     udata.resize(len);
     MultiByteToWideChar(CP_ACP, 0, data, -1, (wchar_t *)udata.data(), len);
 
-    /// 2 unicode ×ªutf-8
+    /// 2 unicode è½¬utf-8
     len = WideCharToMultiByte(CP_UTF8, 0, (wchar_t *)udata.data(), -1, 0, 0,
-                              0, /// Ê§°ÜÄ¬ÈÏÌæ´ú×Ö·û
-                              0  /// sÊÇ·ñÊ¹ÓÃÄ¬ÈÏÌæ´ú
+                              0, /// å¤±è´¥é»˜è®¤æ›¿ä»£å­—ç¬¦
+                              0  /// sæ˜¯å¦ä½¿ç”¨é»˜è®¤æ›¿ä»£
     );
     if (len <= 0)
         return result;
@@ -193,15 +154,15 @@ auto LXData::utf8ToGbk() const -> std::string
 {
     std::string result = "";
 #ifdef _WIN32
-    /// 1 UFT8 ×ªÎªunicode win utf16
+    /// 1 UFT8 è½¬ä¸ºunicode win utf16
 
-    /// 1.1 Í³¼Æ×ª»»ºó×Ö½ÚÊı
-    int len = MultiByteToWideChar(CP_UTF8, /// ×ª»»µÄ¸ñÊ½
-                                  0,       /// Ä¬ÈÏµÄ×ª»»·½Ê½
-                                  data,    /// ÊäÈëµÄ×Ö½Ú
-                                  -1,      /// ÊäÈëµÄ×Ö·û´®´óĞ¡ -1 ÕÒ\0
-                                  0,       /// Êä³ö
-                                  0        /// Êä³öµÄ¿Õ¼ä´óĞ¡
+    /// 1.1 ç»Ÿè®¡è½¬æ¢åå­—èŠ‚æ•°
+    int len = MultiByteToWideChar(CP_UTF8, /// è½¬æ¢çš„æ ¼å¼
+                                  0,       /// é»˜è®¤çš„è½¬æ¢æ–¹å¼
+                                  data,    /// è¾“å…¥çš„å­—èŠ‚
+                                  -1,      /// è¾“å…¥çš„å­—ç¬¦ä¸²å¤§å° -1 æ‰¾\0
+                                  0,       /// è¾“å‡º
+                                  0        /// è¾“å‡ºçš„ç©ºé—´å¤§å°
     );
     if (len <= 0)
         return result;
@@ -209,10 +170,10 @@ auto LXData::utf8ToGbk() const -> std::string
     udata.resize(len);
     MultiByteToWideChar(CP_UTF8, 0, data, -1, (wchar_t *)udata.data(), len);
 
-    /// 2 unicode ×ªGBK
+    /// 2 unicode è½¬GBK
     len = WideCharToMultiByte(CP_ACP, 0, (wchar_t *)udata.data(), -1, 0, 0,
-                              0, /// Ê§°ÜÄ¬ÈÏÌæ´ú×Ö·û
-                              0  /// sÊÇ·ñÊ¹ÓÃÄ¬ÈÏÌæ´ú
+                              0, /// å¤±è´¥é»˜è®¤æ›¿ä»£å­—ç¬¦
+                              0  /// sæ˜¯å¦ä½¿ç”¨é»˜è®¤æ›¿ä»£
     );
     if (len <= 0)
         return result;
@@ -238,20 +199,20 @@ auto LXData::drop() -> void
 
 LXMysql::LXMysql()
 {
-    std::cout << "LXMysql::LXMysql()" << std::endl;
+    // std::cout << "LXMysql::LXMysql()" << std::endl;
     impl_ = std::make_unique<PImpl>(this);
 }
 
 LXMysql::~LXMysql()
 {
-    std::cout << "LXMysql::~LXMysql()" << std::endl;
+    // std::cout << "LXMysql::~LXMysql()" << std::endl;
 }
 
 auto LXMysql::init() -> bool
 {
     close();
-    std::cout << "LXMysql::init()" << std::endl;
-    /// ĞÂ´´½¨Ò»¸öMYSQL ¶ÔÏó
+    // std::cout << "LXMysql::init()" << std::endl;
+    /// æ–°åˆ›å»ºä¸€ä¸ªMYSQL å¯¹è±¡
     impl_->mysql_ = mysql_init(nullptr);
     if (!impl_->mysql_)
     {
@@ -261,6 +222,54 @@ auto LXMysql::init() -> bool
     return true;
 }
 
+auto LXMysql::inputDBConfig() -> bool
+{
+    if (!impl_->mysql_ && !init())
+    {
+        std::cerr << "InputDBConfig failed! mysql is not init!" << std::endl;
+        return false;
+    }
+    /// string config_path = MYSQL_CONFIG_PATH;
+    /// å¦‚æœè¾“å…¥è¿‡å°±ä¸ç”¨è¾“å…¥
+    std::ifstream ifs;
+    MysqlConInfo  db;
+    ifs.open(MYSQL_CONFIG_PATH, std::ios::binary);
+    if (ifs.is_open())
+    {
+        ifs.read(reinterpret_cast<char *>(&db), sizeof(db));
+        if (ifs.gcount() == sizeof(db))
+        {
+            ifs.close();
+            return connect(db.host, db.user, db.pass, db.db_name, db.port);
+        }
+        ifs.close();
+    }
+    std::cout << "input the db set" << std::endl;
+    std::cout << "input db host:";
+    std::cin >> db.host;
+    std::cout << "input db user:";
+    std::cin >> db.user;
+    std::cout << "input db pass:";
+    //string pass = "";
+    LXMysqlTool::getPassword(db.pass, sizeof(db.pass) - 1);
+    //memcpy(db.pass, pass.c_str(), pass.size());
+    std::cout << std::endl;
+    //cin >> db.pass;
+    std::cout << "input db dbname(xms):";
+    std::cin >> db.db_name;
+    std::cout << "input db port(3306):";
+    std::cin >> db.port;
+    std::ofstream ofs;
+    ofs.open(MYSQL_CONFIG_PATH, std::ios::binary);
+    if (ofs.is_open())
+    {
+        ofs.write(reinterpret_cast<char *>(&db), sizeof(db));
+        ofs.close();
+    }
+
+    return connect(db.host, db.user, db.pass, db.db_name, db.port);
+}
+
 auto LXMysql::close() -> void
 {
     if (impl_->mysql_)
@@ -268,23 +277,147 @@ auto LXMysql::close() -> void
         mysql_close(impl_->mysql_);
         impl_->mysql_ = nullptr;
     }
-    std::cout << "LXMysql::close()" << std::endl;
+    // std::cout << "LXMysql::close()" << std::endl;
 }
 
 auto LXMysql::connect(const char *host, const char *user, const char *pass, const char *db, unsigned short port,
-                      unsigned long flag) -> bool
+                      unsigned long flag, bool is_check_database) -> bool
 {
     if (impl_->mysql_ == nullptr && !init())
     {
         std::cerr << "Mysql connect failed! msyql is not init!" << std::endl;
         return false;
     }
-    if (!mysql_real_connect(impl_->mysql_, host, user, pass, db, port, nullptr, flag))
+    if (is_check_database)
     {
-        std::cerr << "Mysql connect failed!" << mysql_error(impl_->mysql_) << std::endl;
+        if (!mysql_real_connect(impl_->mysql_, host, user, pass, nullptr, port, nullptr, flag))
+        {
+            std::cerr << "Mysql connect failed!" << mysql_error(impl_->mysql_) << std::endl;
+            return false;
+        }
+        if (!query(std::format("CREATE DATABASE IF NOT EXISTS {};", db).c_str()))
+        {
+            std::cerr << "Mysql create database failed!" << mysql_error(impl_->mysql_) << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        if (!mysql_real_connect(impl_->mysql_, host, user, pass, db, port, nullptr, flag))
+        {
+            std::cerr << "Mysql connect failed!" << mysql_error(impl_->mysql_) << std::endl;
+            return false;
+        }
+    }
+
+    if (!query(std::format("USE {}", db).c_str()))
+    {
+        std::cerr << "Mysql use database failed!" << mysql_error(impl_->mysql_) << std::endl;
+        return true;
+    }
+    // std::cout << "mysql connect success!" << std::endl;
+    return true;
+}
+
+auto LXMysql::createTable(const std::string &table_name, const XFIELDS &fileds, bool is_check_exist) -> bool
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql createTable failed! msyql is not init!!!" << std::endl;
         return false;
     }
-    std::cout << "mysql connect success!" << std::endl;
+    if (table_name.empty() || fileds.empty())
+    {
+        std::cerr << "Mysql createTable failed! table_name or fileds is empty!!!" << std::endl;
+        return false;
+    }
+
+    std::string              key_string    = "";
+    std::string              unique_string = "";
+    std::vector<std::string> unique_name_list;
+    std::string              pri_key = "";
+    std::vector<std::string> fields;
+    for (const auto field : fileds)
+    {
+        std::string name = "`" + field.name + "`";
+        std::string tmp  = name;
+        switch (field.type)
+        {
+            case LX_DATA_TYPE::LXD_TYPE_STRING:
+            case LX_DATA_TYPE::LXD_TYPE_VARCHAR:
+                {
+                    if (field.length > 0)
+                    {
+                        tmp += " VARCHAR(" + std::to_string(field.length) + ")";
+                    }
+                    else
+                    {
+                        tmp += " VARCHAR(" + std::to_string(field.name.size()) + ")";
+                    }
+                    break;
+                }
+            case LX_DATA_TYPE::LXD_TYPE_INT24:
+                tmp += " INT";
+                break;
+            case LX_DATA_TYPE::LXD_TYPE_LONG:
+                tmp += " INT";
+                break;
+            case LX_DATA_TYPE::LXD_TYPE_BLOB:
+                tmp += " BLOB";
+                break;
+            default:
+                break;
+        }
+
+        if (field.is_key)
+        {
+            pri_key = name;
+        }
+
+        if (field.is_unique)
+        {
+            unique_name_list.emplace_back(name);
+        }
+
+        if (field.is_auto_increment)
+            tmp += " AUTO_INCREMENT";
+        if (field.is_not_null)
+            tmp += " NOT NULL";
+        fields.emplace_back(tmp);
+    }
+
+    /// æ ¹æ®æ“ä½œç³»ç»Ÿè®¾ç½®å­—ç¬¦é›†
+    std::string charset;
+#ifdef _WIN32
+    charset = "gbk";
+#else
+    charset = "utf8";
+#endif
+
+    const std::string &field_str = LXMysqlTool::join(fields, ",");
+
+    const std::string &unique_name_str = LXMysqlTool::join(unique_name_list, ",");
+
+    if (!unique_name_str.empty())
+    {
+        unique_string += ", ";
+        unique_string += std::format(" UNIQUE KEY `{}` ({})", unique_describe, unique_name_str);
+    }
+
+    if (!pri_key.empty())
+    {
+        key_string += ", ";
+        key_string += std::format("PRIMARY KEY ({})", pri_key);
+    }
+
+    const std::string &sql = std::format("CREATE TABLE IF NOT EXISTS `{0}` ({1}{2}{3}) CHARACTER SET {4};", table_name,
+                                         field_str, key_string, unique_string, charset);
+
+    if (!query(sql.c_str()))
+    {
+        std::cerr << "Mysql createTable failed!" << mysql_error(impl_->mysql_) << std::endl;
+        return false;
+    }
     return true;
 }
 
@@ -452,7 +585,7 @@ auto LXMysql::fetchRow() -> std::vector<LXData>
     for (int i = 0; i < mysql_num_fields(impl_->result_); ++i)
     {
         int  iSize = lengths[i];
-        auto type  = static_cast<LXData::LX_DATA_TYPE>(fields[i].type);
+        auto type  = static_cast<LX_DATA_TYPE>(fields[i].type);
         row.emplace_back(r[i], iSize, type);
     }
     return row;
@@ -484,8 +617,8 @@ auto LXMysql::getInsertSql(const XDATA &kv, const std::string &table_name) -> st
         values.emplace_back(tmp);
     }
 
-    const std::string &key_str = join(keys, ",");
-    const std::string &val_str = join(values, ",");
+    const std::string &key_str = LXMysqlTool::join(keys, ",");
+    const std::string &val_str = LXMysqlTool::join(values, ",");
     sql                        = std::format("INSERT INTO `{0}` ({1}) VALUES ({2});", table_name, key_str, val_str);
 
     return sql;
@@ -541,11 +674,11 @@ auto LXMysql::insertBin(const XDATA &kv, const std::string &table_name) -> bool
         ++i;
     }
 
-    const std::string &key_str = join(keys, ",");
-    const std::string &val_str = join(values, ",");
+    const std::string &key_str = LXMysqlTool::join(keys, ",");
+    const std::string &val_str = LXMysqlTool::join(values, ",");
     const std::string &sql     = std::format("INSERT INTO `{0}` ({1}) VALUES ({2});", table_name, key_str, val_str);
 
-    /// Ô¤´¦ÀíSQLÓï¾ä
+    /// é¢„å¤„ç†SQLè¯­å¥
     MYSQL_STMT *stmt = mysql_stmt_init(impl_->mysql_);
     if (!stmt)
     {
@@ -571,6 +704,7 @@ auto LXMysql::insertBin(const XDATA &kv, const std::string &table_name) -> bool
     {
         mysql_stmt_close(stmt);
         std::cerr << "Mysql insertBin failed! mysql_stmt_execute failed!!!" << std::endl;
+        std::cerr << "Mysql insertBin failed: " << mysql_stmt_error(stmt) << std::endl;
         return false;
     }
 
@@ -595,7 +729,7 @@ auto LXMysql::getUpdateSql(const XDATA &kv, const std::string &table_name, std::
         sets.emplace_back(tmp);
     }
 
-    const std::string &set_str = join(sets, ",");
+    const std::string &set_str = LXMysqlTool::join(sets, ",");
     sql                        = std::format("UPDATE `{0}` SET {1} WHERE {2};", table_name, set_str, where);
 
     return sql;
@@ -646,10 +780,10 @@ auto LXMysql::updateBin(const XDATA &kv, const std::string &table_name, const st
         ++i;
     }
 
-    const std::string &set_str = join(sets, ",");
+    const std::string &set_str = LXMysqlTool::join(sets, ",");
     const std::string &sql     = std::format("UPDATE `{0}` SET {1} WHERE {2};", table_name, set_str, where);
 
-    /// Ô¤´¦ÀíSQLÓï¾ä
+    /// é¢„å¤„ç†SQLè¯­å¥
     MYSQL_STMT *stmt = mysql_stmt_init(impl_->mysql_);
     if (!stmt)
     {
@@ -678,8 +812,80 @@ auto LXMysql::updateBin(const XDATA &kv, const std::string &table_name, const st
         return -1;
     }
 
+    int count = mysql_stmt_affected_rows(stmt);
     mysql_stmt_close(stmt);
-    return mysql_stmt_affected_rows(stmt);
+    return count;
+}
+
+int LXMysql::updateBin(const XDATA &kv, const std::string &table_name, const std::map<std::string, std::string> &wheres)
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql updateBin failed! msyql is not init!!!" << std::endl;
+        return -1;
+    }
+
+    if (kv.empty() || table_name.empty())
+    {
+        std::cerr << "Mysql updateBin failed! kv or table_name is empty!!!" << std::endl;
+        return -1;
+    }
+
+    std::vector<std::string> sets;
+    MYSQL_BIND               bind[256] = { 0 };
+    int                      i         = 0;
+    for (const auto &[key, data] : kv)
+    {
+        sets.emplace_back("`" + key + "`=?");
+        bind[i].buffer        = const_cast<char *>(data.data);
+        bind[i].buffer_length = data.size;
+        bind[i].buffer_type   = static_cast<enum_field_types>(data.type);
+        ++i;
+    }
+
+    std::vector<std::string> temps;
+    temps.reserve(wheres.size());
+    for (const auto &[key, value] : wheres)
+    {
+        temps.emplace_back(std::format("`{}`='{}'", key, value));
+    }
+    auto where = LXMysqlTool::join(temps, " AND ");
+
+    const std::string &set_str = LXMysqlTool::join(sets, ",");
+    const std::string &sql     = std::format("UPDATE `{0}` SET {1} WHERE {2};", table_name, set_str, where);
+
+    /// é¢„å¤„ç†SQLè¯­å¥
+    MYSQL_STMT *stmt = mysql_stmt_init(impl_->mysql_);
+    if (!stmt)
+    {
+        std::cerr << "Mysql updateBin failed! mysql_stmt_init failed!!!" << std::endl;
+        return -1;
+    }
+
+    if (mysql_stmt_prepare(stmt, sql.c_str(), static_cast<unsigned long>(sql.size())) != 0)
+    {
+        mysql_stmt_close(stmt);
+        std::cerr << "Mysql updateBin failed! mysql_stmt_prepare failed!!!" << std::endl;
+        return -1;
+    }
+
+    if (mysql_stmt_bind_param(stmt, bind) != 0)
+    {
+        mysql_stmt_close(stmt);
+        std::cerr << "Mysql updateBin failed! mysql_stmt_bind_param failed!!!" << std::endl;
+        return -1;
+    }
+
+    if (mysql_stmt_execute(stmt) != 0)
+    {
+        mysql_stmt_close(stmt);
+        std::cerr << "Mysql updateBin failed! mysql_stmt_execute failed!!!" << std::endl;
+        return -1;
+    }
+
+    int count = mysql_stmt_affected_rows(stmt);
+    mysql_stmt_close(stmt);
+    return count;
 }
 
 auto LXMysql::startTransaction() -> bool
@@ -800,18 +1006,32 @@ auto LXMysql::getColumns(const char *table_name) -> XCOLUMNS
     return xcolumns;
 }
 
-auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<std::string, std::string> where,
-                      std::pair<int, int> limit) -> XROWS
+auto LXMysql::getRows(const char *table_name, const char *selectCol, const std::map<std::string, std::string> &wheres,
+                      const std::pair<int, int> &limit, const XORDER &order) -> XROWS
 {
     XROWS rows;
     if (!table_name || !selectCol)
         return rows;
 
-    std::string sql   = std::format("SELECT {} FROM {}", selectCol, table_name);
-    auto [key, value] = where;
-    if (!key.empty() && !value.empty())
+    std::string sql = std::format("SELECT {} FROM {}", selectCol, table_name);
+
+    if (!wheres.empty())
     {
-        sql += std::format(" WHERE `{}`='{}'", key, value);
+        sql += " WHERE ";
+        std::vector<std::string> temps;
+        temps.reserve(wheres.size());
+        for (const auto &[key, value] : wheres)
+        {
+            temps.emplace_back(std::format("`{}`='{}'", key, value));
+        }
+        sql += LXMysqlTool::join(temps, " AND ");
+    }
+
+    auto [order_name, order_value] = order;
+    if (!order_name.empty())
+    {
+        std::string str_order = order_value == LXD_ADESC ? "ASC" : "DESC";
+        sql += std::format(" ORDER BY `{}` {}", order_name, str_order);
     }
 
     auto [start, end] = limit;
@@ -826,7 +1046,135 @@ auto LXMysql::getRows(const char *table_name, const char *selectCol, std::pair<s
     return getResult(sql.c_str());
 }
 
-auto LXMysql::getCount(const char *table_name, std::pair<std::string, std::string> where) -> int
+auto LXMysql::getRows(const char *table_name, const char *selectCol, const std::pair<std::string, std::string> &where,
+                      const std::pair<int, int> &limit, const XORDER &order) -> XROWS
+{
+    XROWS rows;
+    if (!table_name || !selectCol)
+        return rows;
+
+    std::string sql   = std::format("SELECT {} FROM {}", selectCol, table_name);
+    auto [key, value] = where;
+    if (!key.empty() && !value.empty())
+    {
+        sql += std::format(" WHERE `{}`='{}'", key, value);
+    }
+
+    auto [order_name, order_value] = order;
+    if (!order_name.empty())
+    {
+        std::string str_order = order_value == LXD_ADESC ? "ASC" : "DESC";
+        sql += std::format(" ORDER BY `{}` {}", order_name, str_order);
+    }
+
+    auto [start, end] = limit;
+    if (start >= 0 && end > 0)
+    {
+        const auto str_start = std::to_string(start);
+        const auto str_end   = std::to_string(end);
+
+        sql += std::format(" LIMIT {}, {};", str_start, str_end);
+    }
+
+    return getResult(sql.c_str());
+}
+
+auto LXMysql::getRows(const char *table_name, const std::vector<std::string> &selectCols,
+                      const std::map<std::string, std::string> &wheres, const std::pair<int, int> &limit,
+                      const XORDER &order) -> XROWS
+{
+    XROWS rows;
+    if (!table_name)
+        return rows;
+
+    std::string selectCol;
+    if (selectCols.empty())
+    {
+        selectCol = "*";
+    }
+    else
+    {
+        selectCol = LXMysqlTool::join(selectCols, ",");
+    }
+
+    std::string sql = std::format("SELECT {} FROM {}", selectCol, table_name);
+
+    if (!wheres.empty())
+    {
+        sql += " WHERE ";
+        std::vector<std::string> temps;
+        temps.reserve(wheres.size());
+        for (const auto &[key, value] : wheres)
+        {
+            temps.emplace_back(std::format("`{}`='{}'", key, value));
+        }
+        sql += LXMysqlTool::join(temps, " AND ");
+    }
+
+    auto [order_name, order_value] = order;
+    if (!order_name.empty())
+    {
+        std::string str_order = order_value == LXD_ADESC ? "ASC" : "DESC";
+        sql += std::format(" ORDER BY `{}` {}", order_name, str_order);
+    }
+
+    auto [start, end] = limit;
+    if (start >= 0 && end > 0)
+    {
+        const auto str_start = std::to_string(start - 1);
+        const auto str_end   = std::to_string(end);
+
+        sql += std::format(" LIMIT {}, {};", str_start, str_end);
+    }
+
+    return getResult(sql.c_str());
+}
+
+auto LXMysql::getRows(const char *table_name, const std::vector<std::string> &selectCols,
+                      const std::pair<std::string, std::string> &where, const std::pair<int, int> &limit,
+                      const XORDER &order) -> XROWS
+{
+    XROWS rows;
+    if (!table_name)
+        return rows;
+
+    std::string selectCol;
+    if (selectCol.empty())
+    {
+        selectCol = "*";
+    }
+    else
+    {
+        selectCol = LXMysqlTool::join(selectCols, ",");
+    }
+
+    std::string sql   = std::format("SELECT {} FROM {}", selectCol, table_name);
+    auto [key, value] = where;
+    if (!key.empty() && !value.empty())
+    {
+        sql += std::format(" WHERE `{}`='{}'", key, value);
+    }
+
+    auto [order_name, order_value] = order;
+    if (!order_name.empty())
+    {
+        std::string str_order = order_value == LXD_ADESC ? "ASC" : "DESC";
+        sql += std::format(" ORDER BY `{}` {}", order_name, str_order);
+    }
+
+    auto [start, end] = limit;
+    if (start >= 0 && end > 0)
+    {
+        const auto str_start = std::to_string(start - 1);
+        const auto str_end   = std::to_string(end);
+
+        sql += std::format(" LIMIT {}, {};", str_start, str_end);
+    }
+
+    return getResult(sql.c_str());
+}
+
+auto LXMysql::getCount(const char *table_name, const std::pair<std::string, std::string> &where) -> int
 {
     if (!table_name)
         return -1;
@@ -841,4 +1189,111 @@ auto LXMysql::getCount(const char *table_name, std::pair<std::string, std::strin
     if (rows.empty() || !rows[0][0].data)
         return -1;
     return atoi(rows[0][0].data);
+}
+
+auto LXMysql::getRemoveSql(const char *table_name, const std::map<std::string, std::string> &wheres,
+                           lX_CONDICTION lc /*= LXT_EQUAL*/) -> std::string
+{
+    std::string sql;
+    if (!table_name)
+        return sql;
+
+    sql = std::format("DELETE FROM {}", table_name);
+
+    std::string opt = "";
+    switch (lc)
+    {
+        case LX_C_EQUAL:
+            opt = "=";
+            break;
+        case LX_C_LIKE:
+            opt = " LIKE ";
+            break;
+        case LX_C_IN:
+            opt = " IN ";
+            break;
+        case LX_C_GT:
+            opt = ">";
+            break;
+        case LX_C_LT:
+            opt = "<";
+            break;
+        case LX_C_GE:
+            opt = ">=";
+            break;
+        case LX_C_LE:
+            opt = "<=";
+            break;
+        case LX_C_NE:
+            opt = "!=";
+            break;
+        case LX_C_IS:
+            opt = "IS";
+            break;
+        case LX_C_IS_NOT:
+            opt = "IS NOT";
+            break;
+        default:;
+    }
+
+    if (opt.empty())
+        return sql;
+
+
+    if (!wheres.empty())
+    {
+        sql += " WHERE ";
+        std::vector<std::string> temps;
+        temps.reserve(wheres.size());
+        for (const auto &[key, value] : wheres)
+        {
+            temps.emplace_back(std::format("`{}` {} '{}'", key, opt, value));
+        }
+        sql += LXMysqlTool::join(temps, " AND ");
+    }
+
+    return sql;
+}
+
+auto LXMysql::remove(const char *table_name, const std::map<std::string, std::string> &wheres,
+                     lX_CONDICTION lc /*= LXT_EQUAL*/) -> bool
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "Mysql insert failed! msyql is not init!!!" << std::endl;
+        return false;
+    }
+
+    std::string sql = getRemoveSql(table_name, wheres, lc);
+    if (sql.empty())
+    {
+        std::cerr << "Mysql insert failed! sql is empty!!!" << std::endl;
+        return false;
+    }
+    if (!query(sql.c_str()))
+        return false;
+    int num = mysql_affected_rows(impl_->mysql_);
+    if (num <= 0)
+        return false;
+    return true;
+}
+
+auto LXMysql::getInSqlInId() -> int
+{
+    if (!impl_->mysql_)
+    {
+        std::cerr << "GetInsertID failed:mysql is NULL" << std::endl;
+        return -1;
+    }
+    return mysql_insert_id((MYSQL *)impl_->mysql_);
+}
+
+auto LXMysql::getAliveTime() const -> clock_t
+{
+    return impl_->alive_time_;
+}
+
+auto LXMysql::refreshAliveTime() const -> void
+{
+    impl_->alive_time_ = clock();
 }
