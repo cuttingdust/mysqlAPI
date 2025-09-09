@@ -45,7 +45,7 @@ enum LX_DATA_TYPE
     LXD_TYPE_BOOL        = 244, /**< Currently just a placeholder */
     LXD_TYPE_JSON        = 245,
     LXD_TYPE_NEWDECIMAL  = 246,
-    LXD_TYPE_ENUM        = 247,
+    LXD_TYPE_ENUM        = 247, /// TODO  这个怎么处理
     LXD_TYPE_SET         = 248,
     LXD_TYPE_TINY_BLOB   = 249,
     LXD_TYPE_MEDIUM_BLOB = 250,
@@ -67,7 +67,7 @@ struct LXM_EXPORT LXField
     std::string  name;
     LX_DATA_TYPE type              = LXD_TYPE_STRING;
     int          length            = 0;
-    bool         is_key            = false;
+    bool         is_key            = false; /// 6大约束
     bool         is_auto_increment = false;
     bool         is_not_null       = false;
     bool         is_unique         = false;
@@ -156,7 +156,8 @@ public:
         LX_C_LE     = 6, /// <=
         LX_C_NE     = 7, /// <>
         LX_C_IS     = 8, /// is
-        LX_C_IS_NOT = 9  /// is not
+        LX_C_IS_NOT = 9  /// is not 
+						 /// TODO  between
     };
 
     LXMysql();
