@@ -45,7 +45,7 @@ enum LX_DATA_TYPE
     LXD_TYPE_BOOL        = 244, /**< Currently just a placeholder */
     LXD_TYPE_JSON        = 245,
     LXD_TYPE_NEWDECIMAL  = 246,
-    LXD_TYPE_ENUM        = 247, /// TODO  这个怎么处理
+    LXD_TYPE_ENUM        = 247,
     LXD_TYPE_SET         = 248,
     LXD_TYPE_TINY_BLOB   = 249,
     LXD_TYPE_MEDIUM_BLOB = 250,
@@ -64,13 +64,16 @@ enum LX_ORDER
 
 struct LXM_EXPORT LXField
 {
-    std::string  name;
-    LX_DATA_TYPE type              = LXD_TYPE_STRING;
-    int          length            = 0;
-    bool         is_key            = false; /// 6大约束
-    bool         is_auto_increment = false;
-    bool         is_not_null       = false;
-    bool         is_unique         = false;
+    std::string  name;                                ///<<< 名称
+    LX_DATA_TYPE type              = LXD_TYPE_STRING; ///<<< 类型
+    int          length            = 0;               ///<<< 长度
+    bool         is_key            = false;           ///<<< 主键约束（PRIMARY KEY）
+    bool         is_auto_increment = false;           ///<<< 自增约束 (AUTO INCREMENT)
+    bool         is_not_null       = false;           ///<<< 非空约束（NOT NULL ）
+    bool         is_unique         = false;           ///<<< 唯一约束（UNIQUE）
+    std::string default;                              ///<<< 默认值约束（DEFAULT ）
+    std::string                         comment;      ///<<< 字段注释
+    std::pair<std::string, std::string> foreign;      ///<<< 外键约束
 };
 
 struct LXM_EXPORT LXData
@@ -101,6 +104,8 @@ using XORDER   = std::pair<std::string, LX_ORDER>;
 class LXM_EXPORT LXMysql
 {
 public:
+    LXMysql();
+    virtual ~LXMysql();
     enum LX_OPT
     {
         LX_OPT_CONNECT_TIMEOUT,
@@ -156,17 +161,8 @@ public:
         LX_C_LE     = 6, /// <=
         LX_C_NE     = 7, /// <>
         LX_C_IS     = 8, /// is
-        LX_C_IS_NOT = 9  /// is not 
-						 /// TODO  between
+        LX_C_IS_NOT = 9  /// is not
     };
-
-    LXMysql();
-    virtual ~LXMysql();
-    using Ptr = std::shared_ptr<LXMysql>;
-    static LXMysql::Ptr create()
-    {
-        return std::make_shared<LXMysql>();
-    }
 
 public:
     /// \brief 初始化数据库
@@ -359,14 +355,6 @@ public:
     /// \brief 获取上一次插入的ID号
     /// \return
     auto getInSqlInId() -> int;
-
-public:
-    /// \brief 返回存活的时间
-    /// \return
-    auto getAliveTime() const -> clock_t;
-
-    /// \brief 刷新一下连接的起始的空闲时间点
-    auto refreshAliveTime() const -> void;
 
 private:
     class PImpl;
